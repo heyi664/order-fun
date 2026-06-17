@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Maven: package",
+      "type": "shell",
+      "command": "E:\\ideaui\\IntelliJ IDEA 2024.3.4.1\\plugins\\maven\\lib\\maven3\\bin\\mvn.cmd",
+      "args": [
+        "-DskipTests",
+        "package"
+      ],
+      "group": "build",
+      "problemMatcher": "$javac"
+    },
+    {
+      "label": "Spring Boot: run",
+      "type": "shell",
+      "command": "E:\\ideaui\\IntelliJ IDEA 2024.3.4.1\\plugins\\maven\\lib\\maven3\\bin\\mvn.cmd",
+      "args": [
+        "spring-boot:run"
+      ],
+      "group": "test",
+      "isBackground": false,
+      "problemMatcher": "$javac"
+    },
+    {
+      "label": "Run packaged jar",
+      "type": "shell",
+      "command": "java",
+      "args": [
+        "-jar",
+        "target\\heyee-comments-0.0.1-SNAPSHOT.jar"
+      ],
+      "dependsOn": "Maven: package",
+      "problemMatcher": []
+    }
+  ]
+}

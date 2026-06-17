@@ -1,0 +1,180 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <title>HYEEE AI助手</title>
+  <link rel="stylesheet" href="./css/element.css">
+  <link href="./css/main.css" rel="stylesheet">
+  <link href="./css/chat.css" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+  <div class="chat-page">
+    <div class="chat-header">
+      <div class="header-left" @click="goBack"><i class="el-icon-arrow-left"></i></div>
+      <div class="header-main">
+        <div class="header-title">HYEEE AI助手</div>
+        <div class="header-subtitle">问问店铺、探店灵感和本地生活建议</div>
+      </div>
+      <div class="header-action" @click="clearChat"><i class="el-icon-delete"></i></div>
+    </div>
+
+    <div class="chat-body" ref="chatBody">
+      <div class="welcome-card" v-if="messages.length === 0">
+        <div class="welcome-icon"><i class="el-icon-chat-dot-round"></i></div>
+        <div class="welcome-title">今天想聊点什么？</div>
+        <div class="welcome-text">可以问我附近美食、约会安排、探店文案、优惠券使用建议。</div>
+        <div class="quick-list">
+          <button v-for="item in quickPrompts" :key="item" @click="usePrompt(item)">{{item}}</button>
+        </div>
+      </div>
+
+      <div class="message-row" v-for="(m, index) in messages" :key="index" :class="m.role">
+        <div class="avatar" v-if="m.role === 'assistant'">AI</div>
+        <div class="message-bubble">
+          <div class="message-text">{{m.content}}</div>
+          <div class="message-time">{{m.time}}</div>
+        </div>
+        <div class="avatar user-avatar" v-if="m.role === 'user'"><i class="el-icon-user"></i></div>
+      </div>
+
+      <div class="message-row assistant" v-if="loading">
+        <div class="avatar">AI</div>
+        <div class="message-bubble typing">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-input-bar">
+      <el-input
+        type="textarea"
+        :autosize="{ minRows: 1, maxRows: 4 }"
+        resize="none"
+        placeholder="输入你想问 HYEEE AI 的问题"
+        v-model="inputText"
+        @keydown.native="handleKeydown">
+      </el-input>
+      <button class="send-btn" :disabled="!canSend" @click="sendMessage">
+        <i class="el-icon-position"></i>
+      </button>
+    </div>
+  </div>
+  <foot-bar :active-btn="3"></foot-bar>
+</div>
+<script src="./js/vue.js"></script>
+<script src="./js/axios.min.js"></script>
+<script src="./js/element.js"></script>
+<script src="./js/common.js"></script>
+<script src="./js/footer.js"></script>
+<script>
+  const STORAGE_KEY = "hyeee_ai_chat_messages";
+
+  const app = new Vue({
+    el: "#app",
+    data: {
+      inputText: "",
+      loading: false,
+      conversationId: sessionStorage.getItem("hyeee_ai_conversation_id") || "",
+      messages: [],
+      quickPrompts: [
+        "帮我推荐一家适合周末聚餐的店",
+        "写一段有氛围感的探店文案",
+        "怎么挑选附近高性价比商户？"
+      ]
+    },
+    computed: {
+      canSend() {
+        return this.inputText.trim().length > 0 && !this.loading;
+      }
+    },
+    created() {
+      const cache = sessionStorage.getItem(STORAGE_KEY);
+      if (cache) {
+        try {
+          this.messages = JSON.parse(cache) || [];
+        } catch (e) {
+          this.messages = [];
+        }
+      }
+      this.$nextTick(this.scrollToBottom);
+    },
+    methods: {
+      goBack() {
+        history.length > 1 ? history.back() : location.href = "/";
+      },
+      clearChat() {
+        this.$confirm("确定清空当前聊天记录吗？", "提示", {
+          confirmButtonText: "清空",
+          cancelButtonText: "取消",
+          type: "warning"
+        }).then(() => {
+          this.messages = [];
+          this.conversationId = "";
+          sessionStorage.removeItem(STORAGE_KEY);
+          sessionStorage.removeItem("hyeee_ai_conversation_id");
+        }).catch(() => {});
+      },
+      usePrompt(text) {
+        this.inputText = text;
+        this.sendMessage();
+      },
+      handleKeydown(e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          this.sendMessage();
+        }
+      },
+      sendMessage() {
+        const content = this.inputText.trim();
+        if (!content || this.loading) return;
+
+        this.messages.push({ role: "user", content, time: this.nowTime() });
+        this.inputText = "";
+        this.loading = true;
+        this.persistMessages();
+        this.$nextTick(this.scrollToBottom);
+
+        axios.post("/ai/chat", {
+          conversationId: this.conversationId,
+          message: content,
+          history: this.messages.slice(-10).map(m => ({ role: m.role, content: m.content }))
+        }, { timeout: 30000 }).then(({data}) => {
+          const reply = data && data.reply ? data.reply : "我已经收到你的问题，但后端暂时没有返回回复内容。";
+          if (data && data.conversationId) {
+            this.conversationId = data.conversationId;
+            sessionStorage.setItem("hyeee_ai_conversation_id", this.conversationId);
+          }
+          this.messages.push({ role: "assistant", content: reply, time: this.nowTime() });
+          this.persistMessages();
+        }).catch(err => {
+          this.messages.push({
+            role: "assistant",
+            content: "AI 聊天接口暂时不可用，请确认后端已按接口文档提供 /ai/chat。错误信息：" + err,
+            time: this.nowTime()
+          });
+          this.persistMessages();
+        }).finally(() => {
+          this.loading = false;
+          this.$nextTick(this.scrollToBottom);
+        });
+      },
+      nowTime() {
+        const d = new Date();
+        const h = String(d.getHours()).padStart(2, "0");
+        const m = String(d.getMinutes()).padStart(2, "0");
+        return h + ":" + m;
+      },
+      persistMessages() {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(this.messages));
+      },
+      scrollToBottom() {
+        const el = this.$refs.chatBody;
+        if (el) el.scrollTop = el.scrollHeight;
+      }
+    }
+  })
+</script>
+</body>
+</html>

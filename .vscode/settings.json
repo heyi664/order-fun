@@ -1,0 +1,18 @@
+{
+  "java.jdt.ls.java.home": "E:\\graalvm\\graalvm-ce-java17-windows-amd64-22.3.0\\graalvm-ce-java17-22.3.0",
+  "java.configuration.runtimes": [
+    {
+      "name": "JavaSE-17",
+      "path": "E:\\graalvm\\graalvm-ce-java17-windows-amd64-22.3.0\\graalvm-ce-java17-22.3.0",
+      "default": true
+    }
+  ],
+  "java.import.maven.enabled": true,
+  "java.import.maven.executable.path": "E:\\ideaui\\IntelliJ IDEA 2024.3.4.1\\plugins\\maven\\lib\\maven3\\bin\\mvn.cmd",
+  "maven.executable.path": "E:\\ideaui\\IntelliJ IDEA 2024.3.4.1\\plugins\\maven\\lib\\maven3\\bin\\mvn.cmd",
+  "maven.terminal.useJavaHome": true,
+  "maven.view": "hierarchical",
+  "files.encoding": "utf8",
+  "java.debug.settings.console": "integratedTerminal",
+  "java.compile.nullAnalysis.mode": "automatic"
+}

@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run Heyee Comments",
+      "request": "launch",
+      "mainClass": "com.heyee.comments.HeyeeCommentsApplication",
+      "projectName": "heyee-comments",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "vmArgs": "-Dfile.encoding=UTF-8"
+    },
+    {
+      "type": "java",
+      "name": "Debug Heyee Comments",
+      "request": "launch",
+      "mainClass": "com.heyee.comments.HeyeeCommentsApplication",
+      "projectName": "heyee-comments",
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "vmArgs": "-Dfile.encoding=UTF-8"
+    }
+  ]
+}

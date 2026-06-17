@@ -5,13 +5,13 @@ spring:
     name: heyee-comments
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/hycomment?useSSL=false&serverTimezone=UTC
-    username: root
-    password: Lcx20050415.
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/hycomment?useSSL=false&serverTimezone=UTC}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD}
   redis:
-    host: 192.168.23.129
-    port: 6379
-    password: 123321
+    host: ${REDIS_HOST:192.168.23.129}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD}
     lettuce:
       pool:
         max-active: 10

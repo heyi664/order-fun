@@ -9,6 +9,7 @@
       "projectName": "heyee-comments",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.env",
       "vmArgs": "-Dfile.encoding=UTF-8"
     },
     {
@@ -19,6 +20,7 @@
       "projectName": "heyee-comments",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
+      "envFile": "${workspaceFolder}/.env",
       "vmArgs": "-Dfile.encoding=UTF-8"
     }
   ]

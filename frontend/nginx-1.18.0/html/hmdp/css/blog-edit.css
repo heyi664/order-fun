@@ -1,174 +1,227 @@
-.header{
-    padding: 15px;
-    line-height: 20px;
-    display: flex;
-    justify-content: space-between;
-    text-align: center;
+.blog-edit-page {
+    background:
+        radial-gradient(circle at 58% 0%, rgba(255, 102, 51, 0.06), transparent 280px),
+        #f5f7fb;
+    padding-bottom: 48px;
 }
-.header-cancel-btn{
-    font-size: 14px;
-    font-weight: bold;
+
+.blog-edit-page > .header,
+.upload-box,
+.blog-title,
+.blog-content,
+.blog-shop,
+.shop-dialog {
+    width: min(980px, calc(100vw - 360px));
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
 }
-.header-commit-btn{
-    color: white;
-    background-color: #F63;
-    padding: 0 12px;
-    border-radius: 15px;
+
+.header {
+    margin-top: 28px;
+    height: 74px;
+    padding: 0 22px;
+    border: 1px solid #e4e9f1;
+    border-radius: 12px;
+    background: #fff;
+    display: grid;
+    grid-template-columns: 120px 1fr 120px;
+    align-items: center;
+    box-shadow: 0 14px 36px rgba(17, 24, 39, 0.05);
 }
-.header-title i {
-    font-size: 14px;
+
+.header-cancel-btn {
+    color: #6f7a89;
+    font-weight: 700;
+    cursor: pointer;
 }
+
 .header-title {
     text-align: center;
-    font-size: 18px;
-    font-family: Hiragino Sans GB,Arial,Helvetica,"\5B8B\4F53",sans-serif;
+    font-size: 22px;
+    font-weight: 700;
 }
-.upload-box {
-    padding: 15px;
+
+.header-commit {
     display: flex;
-    overflow-x: scroll;
+    justify-content: flex-end;
 }
-.upload-btn {
-    width: 70px;
-    height: 125px;
-    line-height: 40px;
+
+.header-commit-btn {
+    min-width: 76px;
+    height: 36px;
+    line-height: 36px;
+    border-radius: 18px;
+    color: white;
+    background-color: #ff6633;
     text-align: center;
-    align-items: center;
-    border: 1px dashed #3a8ee6;
-    border-radius: 5px;
-    font-size: 30px;
-    color: #82848a;
-    margin-right: 10px;
+    cursor: pointer;
 }
-.upload-btn i {
-    margin-top: 35px;
+
+.upload-box,
+.blog-title,
+.blog-content,
+.blog-shop {
+    margin-top: 16px;
+    padding: 18px;
+    border: 1px solid #e4e9f1;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgba(17, 24, 39, 0.05);
+}
+
+.upload-box {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+}
+
+.upload-btn {
+    width: 128px;
+    height: 128px;
+    flex: 0 0 128px;
+    border: 1px dashed #ffb69d;
+    border-radius: 12px;
+    color: #ff6633;
+    background: #fff8f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    cursor: pointer;
 }
 
 .pic-list {
     display: flex;
-    overflow-x: scroll;
-    height: 125px;
+    gap: 10px;
+    min-height: 128px;
 }
-.pic-box{
-    width: 100px;
-    height: 120px;
-    border-radius: 5px;
-    margin-right: 2px;
-    border: 1px solid #c0ccda;
+
+.pic-box {
+    width: 128px;
+    height: 128px;
+    border-radius: 12px;
+    border: 1px solid #dfe5ef;
     position: relative;
 }
+
 .pic-box img {
-    width: 100px;
-    height: 120px;
-    border-radius: 5px;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: cover;
 }
+
 .pic-box i {
     position: absolute;
-    z-index: 99;
-    top: 2px;
-    right: 2px;
-    color: gray;
+    top: 6px;
+    right: 6px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 50%;
+    padding: 3px;
 }
-.blog-title,.blog-content {
-    padding: 5px 15px;
-}
-.blog-title input {
+
+.blog-title input,
+.blog-content textarea {
     width: 100%;
-    line-height: 30px;
-    font-size: 14px;
-    border-top: 0;
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 1px solid #e6e6e8;
-}
-input::placeholder {
-    font-weight: bold;
-    color: #cccccc;
-}
-textarea::placeholder {
-    color: #cccccc;
-}
-.blog-content textarea{
-    width: 100%;
-    height: 310px;
     border: 0;
+    outline: none;
+    color: #151922;
+    box-sizing: border-box;
 }
+
+.blog-title input {
+    line-height: 38px;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.blog-content textarea {
+    min-height: 320px;
+    resize: vertical;
+    font-size: 15px;
+    line-height: 26px;
+}
+
+.divider {
+    display: none;
+}
+
 .blog-shop {
-    color: #82848a;
-    padding: 15px;
+    color: #7a8494;
     display: flex;
     justify-content: space-between;
+    cursor: pointer;
 }
+
 .shop-left {
-    color: #111111;
-    font-size: 14px;
-    font-weight: bold;
+    color: #151922;
+    font-weight: 700;
 }
-.divider {
-    background-color: #f4f4f5;
-    height: 10px;
-}
-.end-gray {
-    background-color: #f4f4f5;
-    height: 100%;
-}
+
 .mask {
-    height: 100%;
-    width: 100%;
     position: fixed;
+    inset: 0;
     z-index: 299;
-    top: 0;
-    left: 0;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3);
 }
+
 .shop-dialog {
-    position: absolute;
+    position: fixed;
+    left: 50%;
+    top: 50%;
     z-index: 999;
-    bottom: 0;
-    height: 500px;
-    width: 100%;
+    width: 720px;
+    max-height: 620px;
+    transform: translate(-50%, -50%);
+    border-radius: 12px;
     background-color: #fff;
+    overflow: hidden;
+    box-shadow: 0 22px 70px rgba(17, 24, 39, 0.18);
 }
+
 .search-bar {
     display: flex;
-    padding: 15px;
-    line-height: 30px;
-    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    line-height: 36px;
 }
+
 .city-select {
-    font-weight: bold;
-    font-size: 14px;
-    margin-right: 10px;
+    font-weight: 700;
 }
+
 .search-input {
-    width: 50%;
-    flex-grow: 1;
-    background-color: #f1f1f1;
-    line-height: 30px;
-    align-items: center;
-    border-radius: 20px;
+    flex: 1;
+    background-color: #f5f7fb;
+    border-radius: 18px;
     display: flex;
-    padding: 0 10px ;
+    align-items: center;
+    padding: 0 12px;
 }
+
 .search-input input {
     margin-left: 10px;
     border: 0;
     width: 100%;
-    background-color: #f1f1f1;
-}
-input:focus,textarea:focus {
+    background-color: transparent;
     outline: none;
 }
+
 .shop-list {
-    padding: 15px;
-    overflow-y: scroll;
-    height: 100%;
+    padding: 0 16px 16px;
+    overflow-y: auto;
+    max-height: 430px;
 }
+
 .shop-item {
-    border-bottom: 1px solid #eae8e8;
-    padding: 8px 0;
+    border-bottom: 1px solid #edf1f6;
+    padding: 12px 0;
+    cursor: pointer;
 }
+
 .shop-name {
-    font-size: 14px;
-    font-weight: bold;
+    font-weight: 700;
 }

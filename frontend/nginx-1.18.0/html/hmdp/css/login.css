@@ -1,63 +1,262 @@
-.login-container{
-    height: 100%;
-}
-.header{
-    width: 100%;
-    height: 7%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 2px solid #ff6633;
-}
-.header-back-btn{
-    width: 10%;
-    color: #ff6633;
-    font-size: 22px;
-}
-.header-title {
-    width: 90%;
-    text-align: center;
-    font-size: 18px;
-    font-family: Hiragino Sans GB,Arial,Helvetica,"\5B8B\4F53",sans-serif;
+* {
+  box-sizing: border-box;
 }
 
-.content{
-    height: 93%;
-    background-color: #f7f5f5;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+html,
+body,
+#app {
+  width: 100%;
+  min-width: 1280px;
+  min-height: 100vh;
+  margin: 0;
+  background: #f5f7fb;
+  color: #151922;
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+}
+
+.login-container {
+  position: relative;
+  min-height: 100vh;
+  padding-top: 328px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 102, 51, 0.08), transparent 260px),
+    linear-gradient(180deg, #f9fbff 0%, #f1f5fa 100%);
+}
+
+.login-container::before {
+  content: "H Y E E E";
+  position: absolute;
+  top: 158px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #111827;
+  font-family: SimHei, "Microsoft YaHei", Arial, sans-serif;
+  font-size: 68px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 24px;
+  white-space: nowrap;
+}
+
+.login-container::after {
+  content: "";
+  position: absolute;
+  top: 258px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 560px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 0%, #111827 14%, #111827 86%, transparent 100%);
+}
+
+.header {
+  position: absolute;
+  top: 54px;
+  left: 60px;
+  z-index: 2;
+}
+
+.header-back-btn {
+  width: 84px;
+  height: 58px;
+  border: 1px solid #d8dee8;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #ff6633;
+  font-size: 34px;
+  font-weight: 400;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(17, 24, 39, 0.06);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.header-back-btn:hover {
+  border-color: #ffb199;
+  box-shadow: 0 14px 34px rgba(255, 102, 51, 0.14);
+  transform: translateY(-1px);
+}
+
+.header-title {
+  display: none;
+}
+
+.content {
+  width: 520px;
+  margin: 0 auto;
 }
 
 .login-form {
-    height: 85%;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
+
+.login-form > div[style*="space-between"] {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 12px;
+  align-items: center;
+}
+
+.login-form > div[style*="space-between"] .el-input,
+.login-form > div[style*="space-between"] .el-button {
+  width: 100% !important;
+}
+
+.login-form .el-input {
+  display: block;
+}
+
+.login-form .el-input__inner {
+  height: 56px;
+  padding: 0 18px;
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+  background: #fff;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-form .el-input__inner::placeholder {
+  color: #a8b0bd;
+  font-weight: 400;
+}
+
+.login-form .el-input__inner:focus {
+  border-color: #ff8a65;
+  box-shadow: 0 0 0 4px rgba(255, 102, 51, 0.1);
+}
+
+.login-form .el-button {
+  height: 56px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  box-shadow: 0 10px 22px rgba(255, 102, 51, 0.18);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-form .el-button:hover {
+  transform: translateY(-1px);
+}
+
+.login-form .el-button--success,
+.login-form .el-button--success:focus,
+.login-form .el-button--success:hover {
+  background: #4fb832;
+  border-color: #4fb832;
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(79, 184, 50, 0.18);
+}
+
+.login-form > .el-input {
+  margin-top: 14px;
+}
+
+.login-form > .el-button {
+  width: 100% !important;
+  margin-top: 18px;
+  background: #ff6633 !important;
+  border-color: #ff6633 !important;
+  color: #fff !important;
+}
+
+.login-form > div:nth-child(4) {
+  margin-top: 13px !important;
+  color: #8b95a5 !important;
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  font-size: 13px !important;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.login-form > div:last-child {
+  margin-top: 10px !important;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.login-form a {
+  color: #ff6633;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .login-radio {
-    height: 15%;
-    width: 100%;
-    display: flex;
-    align-items: start;
+  width: 520px;
+  margin: 22px auto 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #6f7a89;
+  font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.7;
 }
-input[type="radio"] + label::before {
-    content: "\a0"; /*不换行空格*/
-    display: inline-block;
-    vertical-align: middle;
-    font-size: 12px;
-    width: 0.7em;
-    height: 0.7em;
-    margin-right: .4em;
-    border-radius: 50%;
-    border: 2px solid #F63;
-    text-indent: .15em;
-    line-height: 1; 
-    padding: .2em;
+
+.login-radio > div:first-child {
+  flex: 0 0 auto;
+  padding-top: 3px;
 }
-input[type="radio"]:checked + label::before {
-    background-color: #F63;
-    background-clip: content-box;
-    padding: .2em;
+
+.login-radio input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #ff6633;
 }
-input[type="radio"] {
-    opacity: 0;
+
+.login-radio > div:last-child {
+  flex: 1;
+  max-width: 480px;
+}
+
+.login-radio a {
+  color: #ff6633;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+@media (max-width: 1440px) {
+  .login-container {
+    padding-top: 302px;
+  }
+
+  .login-container::before {
+    top: 138px;
+    font-size: 60px;
+    letter-spacing: 22px;
+  }
+
+  .login-container::after {
+    top: 228px;
+    width: 500px;
+  }
+
+  .content,
+  .login-radio {
+    width: 500px;
+  }
+
+  .login-form > div[style*="space-between"] {
+    grid-template-columns: minmax(0, 1fr) 145px;
+  }
 }

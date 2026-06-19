@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HYEEE</title>
   <!-- 引入样式 -->
   <link rel="stylesheet" href="./css/element.css">
@@ -23,13 +23,13 @@
   </style>
 </head>
 <body>
-<div id="app">
+<div id="app" class="page-with-nav blog-detail-page">
   <div class="header">
     <div class="header-back-btn" @click="goBack"><i class="el-icon-arrow-left"></i></div>
     <div class="header-title"></div>
     <div class="header-share">...</div>
   </div>
-  <div style="height: 85%; overflow-y: scroll; overflow-x: hidden">
+  <div class="blog-detail-scroll">
     <div class="blog-info-box" ref="swiper"
          @touchstart="moveStart"
          @touchmove="moving"
@@ -132,7 +132,7 @@
     </div>
     <div class="blog-divider"></div>
   </div>
-  <div class="foot">
+  <div class="blog-action-bar">
     <div class="foot-box">
       <div class="foot-view"  @click="addLike()">
         <svg t="1646634642977" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2187" width="26" height="26">
@@ -147,12 +147,14 @@
       <div class="foot-view"><i class="el-icon-chat-square"></i></div>
     </div>
   </div>
+  <foot-bar :active-btn="1"></foot-bar>
 </div>
 <script src="./js/vue.js"></script>
 <script src="./js/axios.min.js"></script>
 <!-- 引入组件库 -->
 <script src="./js/element.js"></script>
 <script src="./js/common.js"></script>
+<script src="./js/footer.js"></script>
 <script>
   let each = function (ary, callback) {
     for (let i = 0, l = ary.length; i < l; i++) {

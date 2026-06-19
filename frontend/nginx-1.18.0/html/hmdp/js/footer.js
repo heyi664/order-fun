@@ -1,31 +1,38 @@
-﻿Vue.component("footBar", {
+Vue.component("footBar", {
   template: `
-    <div class="foot">
-    <div class="foot-box" :class="{active: activeBtn === 1}" @click="toPage(1)">
-      <div class="foot-view"><i class="el-icon-s-home"></i></div>
-      <div class="foot-text">首页</div>
-    </div>
-    <div class="foot-box" :class="{active: activeBtn === 2}" @click="toPage(2)">
-      <div class="foot-view"><i class="el-icon-map-location"></i></div>
-      <div class="foot-text">地图</div>
-    </div>
-    <div class="foot-box" @click="toPage(0)">
-      <img class="add-btn" src="/imgs/add.png" alt="">
-    </div>
-    <div class="foot-box" :class="{active: activeBtn === 3}" @click="toPage(3)">
-      <div class="foot-view"><i class="el-icon-chat-dot-round"></i></div>
-      <div class="foot-text">消息</div>
-    </div>
-    <div class="foot-box" :class="{active: activeBtn === 4}" @click="toPage(4)">
-      <div class="foot-view"><i class="el-icon-user"></i></div>
-      <div class="foot-text">我的</div>
-    </div>
-  </div>
+    <aside class="desktop-nav">
+      <div class="desktop-brand" @click="toPage(1)">
+        <div class="desktop-brand-mark">H</div>
+        <div>
+          <div class="desktop-brand-name">HYEEE</div>
+          <div class="desktop-brand-sub">Local Life</div>
+        </div>
+      </div>
+      <nav class="desktop-nav-list">
+        <button class="desktop-nav-item" :class="{active: activeBtn === 1}" @click="toPage(1)">
+          <i class="el-icon-s-home"></i>
+          <span>首页</span>
+        </button>
+        <button class="desktop-nav-item" :class="{active: activeBtn === 2}" @click="toPage(2)">
+          <i class="el-icon-map-location"></i>
+          <span>附近商铺</span>
+        </button>
+        <button class="desktop-nav-item" :class="{active: activeBtn === 0}" @click="toPage(0)">
+          <i class="el-icon-edit-outline"></i>
+          <span>发布探店</span>
+        </button>
+        <button class="desktop-nav-item" :class="{active: activeBtn === 3}" @click="toPage(3)">
+          <i class="el-icon-chat-dot-round"></i>
+          <span>AI 聊天</span>
+        </button>
+        <button class="desktop-nav-item" :class="{active: activeBtn === 4}" @click="toPage(4)">
+          <i class="el-icon-user"></i>
+          <span>个人中心</span>
+        </button>
+      </nav>
+      <div class="desktop-nav-foot">Web Edition</div>
+    </aside>
   `,
-  data() {
-    return {
-    }
-  },
   props: ['activeBtn'],
   methods: {
     toPage(i) {
@@ -33,8 +40,10 @@
         location.href = "/blog-edit.html"
       } else if (i === 4) {
         location.href = "/info.html"
-      } else if (i === 1){
+      } else if (i === 1) {
         location.href = "/"
+      } else if (i === 2) {
+        location.href = "/shop-list.html?type=1&name=美食"
       } else if (i === 3) {
         location.href = "/chat.html"
       }

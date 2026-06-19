@@ -1,59 +1,186 @@
 html {
-    font-size: 12px;
     width: 100%;
+    min-width: 1280px;
+    font-size: 15px;
 }
-body{
+
+body {
     margin: 0;
+    min-width: 1280px;
+    background: #f5f7fb;
+    color: #151922;
+    font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
 }
-html,body,#app{
-    height: 100%;
+
+html,
+body,
+#app {
+    min-height: 100%;
+}
+
+button,
+input,
+textarea {
+    font-family: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+a {
+    color: #ff6633;
+    text-decoration: none;
 }
 
 .el-tabs__item {
     font-size: 14px;
     font-weight: bold;
 }
+
 .el-tabs__active-bar {
     height: 4px;
-    background-image: linear-gradient(to right, #F63, #f5b9a2);
-}
-.foot {
-    width: 100%;
-    height: 8%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 -1px 2px 1px rgba(0, 0, 0, 0.1);
-    position: absolute;
-    bottom: 0;
-}
-.foot .add-btn {
-    width: 38px;
-    height: 38px;
-    box-shadow: 0 0 3px 2px rgba(0, 0, 0, 0.1);
-    border-radius: 18px;
-}
-.foot-box{
-    width: 20%;
-    color: #82848a;
-    text-align: center;
-}
-.foot-view {
-    font-size: 26px;
-}
-.foot-text{
-    font-size: 8px;
-    margin-top: -4px;
-}
-.foot-text, .foot-view{
-    text-align: center;
-}
-.active{
-    color: #ff6633;
+    background-image: linear-gradient(to right, #ff6633, #f5b9a2);
 }
 
-/*element-ui的评价星星间隙*/
 .el-rate__icon {
     margin-right: 0;
 }
 
+.page-with-nav {
+    min-height: 100vh;
+    padding-left: 260px;
+    box-sizing: border-box;
+}
+
+.page-content {
+    width: min(1440px, calc(100vw - 340px));
+    margin: 0 auto;
+    padding: 28px 30px 48px;
+    box-sizing: border-box;
+}
+
+.page-panel {
+    border: 1px solid #e4e9f1;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(17, 24, 39, 0.05);
+}
+
+.desktop-nav {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 900;
+    width: 260px;
+    padding: 28px 20px;
+    background: #151922;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.desktop-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 32px;
+    cursor: pointer;
+}
+
+.desktop-brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 10px;
+    background: #ff6633;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.desktop-brand-name {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 26px;
+}
+
+.desktop-brand-sub {
+    color: #9ba4b3;
+    font-size: 13px;
+}
+
+.desktop-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.desktop-nav-item {
+    width: 100%;
+    min-height: 48px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #d7dce5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    font-size: 15px;
+    text-align: left;
+}
+
+.desktop-nav-item i {
+    font-size: 19px;
+}
+
+.desktop-nav-item:hover,
+.desktop-nav-item.active {
+    background: rgba(255, 102, 51, 0.14);
+    color: #fff;
+}
+
+.desktop-nav-item.active {
+    border: 1px solid rgba(255, 102, 51, 0.42);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.desktop-nav-foot {
+    margin-top: auto;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    color: #858c99;
+    font-size: 13px;
+}
+
+.header,
+.search-bar {
+    box-sizing: border-box;
+}
+
+.foot {
+    display: none;
+}
+
+.el-input__inner,
+.el-textarea__inner {
+    border-color: #d9e0ea;
+    border-radius: 10px;
+    color: #151922;
+    font-family: inherit;
+}
+
+.el-input__inner:focus,
+.el-textarea__inner:focus {
+    border-color: #ff8a65;
+    box-shadow: 0 0 0 3px rgba(255, 102, 51, 0.1);
+}
+
+.el-button {
+    border-radius: 10px;
+    font-family: inherit;
+}

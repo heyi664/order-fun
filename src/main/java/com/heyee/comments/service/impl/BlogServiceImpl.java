@@ -14,11 +14,13 @@ import com.heyee.comments.mapper.BlogMapper;
 import com.heyee.comments.service.IBlogService;
 import com.heyee.comments.service.IFollowService;
 import com.heyee.comments.service.IUserService;
+import com.heyee.comments.service.ITopicService;
 import com.heyee.comments.utils.SystemConstants;
 import com.heyee.comments.utils.UserHolder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -26,8 +28,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 import static com.heyee.comments.utils.RedisConstants.BLOG_LIKED_KEY;
+import static com.heyee.comments.utils.RedisConstants.BLOG_VIEWED_KEY;
+import static com.heyee.comments.utils.RedisConstants.BLOG_VIEWED_TTL;
+import static com.heyee.comments.utils.RedisConstants.TOPIC_LIKE_SCORE;
+import static com.heyee.comments.utils.RedisConstants.TOPIC_VIEW_SCORE;
 import static com.heyee.comments.utils.RedisConstants.FEED_KEY;
 
 /**
@@ -50,6 +57,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     @Resource
     private IFollowService followService;
 
+    @Resource
+    private ITopicService topicService;
+
     @Override
     public Result queryHotBlog(Integer current) {
         // 根据用户查询
@@ -67,7 +77,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
     @Override
-    public Result queryBlogById(Long id) {
+    public Result queryBlogById(Long id, String viewerKey) {
         // 1.查询blog
         Blog blog = getById(id);
         if (blog == null) {
@@ -75,6 +85,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         }
         // 2.查询blog有关的用户
         queryBlogUser(blog);
+        recordView(blog, viewerKey);
         // 3.查询blog是否被点赞
         isBlogLiked(blog);
         return Result.ok(blog);
@@ -108,6 +119,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             // 3.2.保存用户到Redis的set集合  zadd key value score
             if (isSuccess) {
                 stringRedisTemplate.opsForZSet().add(key, userId.toString(), System.currentTimeMillis());
+                topicService.adjustHeatForBlog(id, TOPIC_LIKE_SCORE);
             }
         } else {
             // 4.如果已点赞，取消点赞
@@ -116,6 +128,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             // 4.2.把用户从Redis的set集合移除
             if (isSuccess) {
                 stringRedisTemplate.opsForZSet().remove(key, userId.toString());
+                topicService.adjustHeatForBlog(id, -TOPIC_LIKE_SCORE);
             }
         }
         return Result.ok();
@@ -143,10 +156,14 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
     @Override
+    @Transactional
     public Result saveBlog(Blog blog) {
         // 1.获取登录用户
         UserDTO user = UserHolder.getUser();
         blog.setUserId(user.getId());
+        blog.setLiked(blog.getLiked() == null ? 0 : blog.getLiked());
+        blog.setComments(blog.getComments() == null ? 0 : blog.getComments());
+        blog.setViews(blog.getViews() == null ? 0 : blog.getViews());
         // 2.保存探店笔记
         boolean isSuccess = save(blog);
         if(!isSuccess){
@@ -154,6 +171,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         }
         // 3.查询笔记作者的所有粉丝 select * from tb_follow where follow_user_id = ?
         List<Follow> follows = followService.query().eq("follow_user_id", user.getId()).list();
+        topicService.bindTopicsToBlog(blog);
         // 4.推送笔记id给所有粉丝
         for (Follow follow : follows) {
             // 4.1.获取粉丝id
@@ -213,6 +231,22 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         r.setMinTime(minTime);
 
         return Result.ok(r);
+    }
+
+    private void recordView(Blog blog, String viewerKey) {
+        String dedupKey = BLOG_VIEWED_KEY + blog.getId() + ":" + viewerKey;
+        Boolean firstView = stringRedisTemplate.opsForValue()
+                .setIfAbsent(dedupKey, "1", BLOG_VIEWED_TTL, TimeUnit.MINUTES);
+        if (!Boolean.TRUE.equals(firstView)) {
+            return;
+        }
+        boolean updated = update().setSql("views = views + 1").eq("id", blog.getId()).update();
+        if (!updated) {
+            stringRedisTemplate.delete(dedupKey);
+            return;
+        }
+        blog.setViews((blog.getViews() == null ? 0 : blog.getViews()) + 1);
+        topicService.adjustHeatForBlog(blog.getId(), TOPIC_VIEW_SCORE);
     }
 
     private void queryBlogUser(Blog blog) {

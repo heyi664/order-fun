@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -43,7 +43,7 @@
   </div>
   <div class="divider"></div>
   <div class="blog-shop" @click="showDialog=true">
-    <div class="shop-left">关联商户</div>
+    <div class="shop-left">关联商户（可选）</div>
     <div v-if="selectedShop.name">{{selectedShop.name}}</div>
     <div v-else>去选择&nbsp;<i class="el-icon-arrow-right"></i></div>
   </div>
@@ -52,7 +52,7 @@
   <transition name="el-zoom-in-bottom">
     <div class="shop-dialog" v-show="showDialog">
       <div class="blog-shop">
-        <div class="shop-left">关联商户</div>
+        <div class="shop-left">关联商户（可选）</div>
       </div>
       <div class="search-bar">
         <div class="city-select">杭州 <i class="el-icon-arrow-down"></i></div>
@@ -109,7 +109,11 @@
       submitBlog() {
         let {...data} = this.params;
         data.images = this.fileList.join(",");
-        data.shopId = this.selectedShop.id;
+        if (this.selectedShop.id) {
+          data.shopId = this.selectedShop.id;
+        } else {
+          delete data.shopId;
+        }
         axios.post("/blog", data)
           .then(resp => location.href = "/info.html")
           .catch(this.$message.error)

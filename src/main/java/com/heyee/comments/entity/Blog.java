@@ -82,6 +82,11 @@ public class Blog implements Serializable {
     private Integer comments;
 
     /**
+     * View count.
+     */
+    private Integer views;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

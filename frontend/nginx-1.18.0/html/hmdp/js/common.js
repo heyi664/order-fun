@@ -1,3 +1,17 @@
+const routeTransitionKey = "hy_route_transition";
+if (sessionStorage.getItem(routeTransitionKey) === "1") {
+  sessionStorage.removeItem(routeTransitionKey);
+  document.documentElement.classList.add("route-enter-prep");
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      document.documentElement.classList.add("route-enter-active");
+    });
+  });
+  setTimeout(() => {
+    document.documentElement.classList.remove("route-enter-prep", "route-enter-active");
+  }, 420);
+}
+
 // let commonURL = "http://192.168.50.115:8081";
 let commonURL = "/api";
 // 设置后台服务地址
@@ -24,7 +38,7 @@ axios.interceptors.response.use(function (response) {
 }, function (error) {
   // 一般是服务端异常或者网络异常
   console.log(error)
-  if(error.response.status == 401){
+  if(error.response && error.response.status == 401){
     // 未登录，跳转
     setTimeout(() => {
       location.href = "/login.html"
@@ -43,6 +57,14 @@ axios.defaults.paramsSerializer = function(params) {
   return p;
 }
 const util = {
+  navigate(url) {
+    if (!url || document.documentElement.classList.contains("route-leaving")) return;
+    sessionStorage.setItem(routeTransitionKey, "1");
+    document.documentElement.classList.add("route-leaving");
+    setTimeout(() => {
+      location.href = url;
+    }, 280);
+  },
   commonURL,
   getUrlParam(name) {
     let reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");

@@ -77,12 +77,16 @@
           this.$message.error("手机号和验证码不能为空！");
           return
         }
+        this.form.phone = this.form.phone.trim();
+        this.form.code = this.form.code.trim();
         axios.post("/user/login", this.form)
         .then(({data}) => {
-            if(data){
-              // 保存用户信息到session
-              sessionStorage.setItem("token", data);
+            if(!data){
+              this.$message.error("登录失败，未获取到登录凭证");
+              return;
             }
+            // 保存用户信息到session
+            sessionStorage.setItem("token", data);
             // 跳转到首页
             location.href = "/index.html"
         })
@@ -96,24 +100,27 @@
           this.$message.error("手机号不能为空");
           return;
         }
+        this.form.phone = this.form.phone.trim();
         // 发送验证码
         axios.post("/user/code?phone="+this.form.phone)
-          .then(() => {})
+          .then(() => {
+            this.$message.success("验证码已发送");
+            // 禁用按钮
+            this.disabled = true;
+            // 按钮倒计时
+            let i = 60;
+            this.codeBtnMsg = (i--) + '秒后可重发'
+            let taskId = setInterval(() => this.codeBtnMsg = (i--) + '秒后可重发', 1000);
+            setTimeout(() => {
+              this.disabled = false;
+              clearInterval(taskId);
+              this.codeBtnMsg = "发送验证码";
+            }, 59000)
+          })
           .catch(err => {
             console.log(err);
             this.$message.error(err)
           });
-        // 禁用按钮
-        this.disabled = true;
-        // 按钮倒计时
-        let i = 60;
-        this.codeBtnMsg = (i--) + '秒后可重发'
-        let taskId = setInterval(() => this.codeBtnMsg = (i--) + '秒后可重发', 1000);
-        setTimeout(() => {
-          this.disabled = false;
-          clearInterval(taskId);
-          this.codeBtnMsg = "发送验证码";
-        }, 59000)
       }
     }
   })

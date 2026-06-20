@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -55,7 +55,7 @@
     </div>
     <div class="blog-text" v-html="blog.content">
     </div>
-    <div class="shop-basic">
+    <div class="shop-basic" v-if="blog.shopId">
       <div class="shop-icon">
         <img :src="shop.image" alt="">
       </div>
@@ -216,7 +216,9 @@
             data.images = data.images.split(",")
             this.blog = data;
             this.$nextTick(this.init);
-            this.queryShopById(data.shopId)
+            if (data.shopId) {
+              this.queryShopById(data.shopId)
+            }
             this.queryLikeList(id);
             this.queryLoginUser();
           })

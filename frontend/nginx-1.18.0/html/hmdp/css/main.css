@@ -184,3 +184,73 @@ a {
     border-radius: 10px;
     font-family: inherit;
 }
+
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: #f5f7fb;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.28s ease, visibility 0.28s ease;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 3001;
+    width: 64px;
+    height: 3px;
+    border-radius: 999px;
+    background: #ff6633;
+    opacity: 0;
+    transform: translate(-50%, -50%) scaleX(0.25);
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.28s ease;
+}
+
+html.route-leaving body::after,
+html.route-enter-prep body::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+html.route-leaving body::before {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1);
+}
+
+html.route-leaving #app {
+    opacity: 0;
+    transform: translateY(-7px);
+    transition: opacity 0.22s ease, transform 0.28s ease;
+}
+
+html.route-enter-prep #app {
+    opacity: 0;
+    transform: translateY(8px);
+}
+
+html.route-enter-active body::after {
+    opacity: 0;
+    visibility: hidden;
+}
+
+html.route-enter-active #app {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.34s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body::after,
+    body::before,
+    html.route-leaving #app,
+    html.route-enter-active #app {
+        transition-duration: 0.01ms;
+    }
+}

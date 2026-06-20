@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -27,11 +27,23 @@
     </div>
     <div class="header-icon" @click="toPage(4)"><i class="el-icon-user"></i></div>
   </div>
-  <div class="type-list">
-    <div class="type-box" v-for="t in types" :key="t.id" @click="toShopList(t.id, t.name)">
-      <div class="type-view"><img :src="'/imgs/' + t.icon" alt=""></div>
-      <div class="type-text">{{t.name}}</div>
-    </div>
+  <div class="quick-entry-list">
+    <a class="quick-entry" href="/chat.html" @click="goQuickEntry($event, '/chat.html')">
+      <span class="quick-entry-icon ai-icon"><img src="/imgs/home/ai-chat.png" alt="AI聊天"></span>
+      <span class="quick-entry-text">AI 聊天</span>
+    </a>
+    <a class="quick-entry" href="/shop-list.html?type=1&amp;name=%E7%BE%8E%E9%A3%9F" @click="goQuickEntry($event, '/shop-list.html?type=1&amp;name=%E7%BE%8E%E9%A3%9F')">
+      <span class="quick-entry-icon food-icon"><img src="/imgs/home/food.png" alt="美食"></span>
+      <span class="quick-entry-text">美食</span>
+    </a>
+    <a class="quick-entry" href="/shop-list.html?type=2&amp;name=KTV" @click="goQuickEntry($event, '/shop-list.html?type=2&amp;name=KTV')">
+      <span class="quick-entry-icon ktv-icon"><img src="/imgs/home/ktv.png" alt="KTV"></span>
+      <span class="quick-entry-text">KTV</span>
+    </a>
+    <a class="quick-entry" href="/shop-list.html?type=11&amp;name=%E7%94%B5%E5%BD%B1" @click="goQuickEntry($event, '/shop-list.html?type=11&amp;name=%E7%94%B5%E5%BD%B1')">
+      <span class="quick-entry-icon movie-icon"><img src="/imgs/home/movie.png" alt="电影"></span>
+      <span class="quick-entry-text">电影</span>
+    </a>
   </div>
   <div class="home-main">
     <div class="blog-list" @scroll="onScroll">
@@ -58,7 +70,7 @@
         </div>
         <div class="topic-rank-city">杭州</div>
       </div>
-      <div class="topic-rank-sub">根据搜索、点赞、评论和新发布内容实时更新</div>
+      <div class="topic-rank-sub">汇总带 #话题 帖子的浏览、点赞与评论</div>
       <div class="topic-rank-list">
         <div class="topic-rank-item" v-for="topic in hotTopics" :key="topic.id" @click="toTopic(topic)">
           <div class="topic-rank-no" :class="{top: topic.rank <= 3}">{{topic.rank}}</div>
@@ -70,6 +82,7 @@
             </div>
           </div>
         </div>
+        <div class="topic-rank-empty" v-if="hotTopics.length === 0">暂无带 #话题 的帖子</div>
       </div>
     </aside>
   </div>
@@ -87,35 +100,21 @@
     el: "#app",
     data: {
       isReachBottom: false,
-      types: [], // 类型列表
       blogs: [], // 播客列表
       current: 1,// blog的页码
-      hotTopics: [
-        {id: 1, rank: 1, name: "杭州周末去哪玩", heat: "24.8w", trend: "up", trendText: "上升"},
-        {id: 2, rank: 2, name: "人均50吃什么", heat: "19.6w", trend: "up", trendText: "上升"},
-        {id: 3, rank: 3, name: "下班后放松去处", heat: "16.2w", trend: "hot", trendText: "热"},
-        {id: 4, rank: 4, name: "情侣约会餐厅", heat: "13.9w", trend: "flat", trendText: "稳定"},
-        {id: 5, rank: 5, name: "适合拍照的店", heat: "11.7w", trend: "up", trendText: "上升"},
-        {id: 6, rank: 6, name: "深夜食堂", heat: "9.4w", trend: "flat", trendText: "稳定"},
-        {id: 7, rank: 7, name: "按摩足疗避雷", heat: "8.8w", trend: "hot", trendText: "热"},
-        {id: 8, rank: 8, name: "学生党聚餐", heat: "7.5w", trend: "flat", trendText: "稳定"}
-      ],
+      hotTopics: [],
+      topicRefreshTimer: null,
+      currentTopicId: null,
     },
     created() {
-      // 查询类型
-      this.queryTypes();
       this.queryHotBlogsScroll();
+      this.queryHotTopics();
+      this.topicRefreshTimer = setInterval(this.queryHotTopics, 10000);
+    },
+    beforeDestroy() {
+      clearInterval(this.topicRefreshTimer);
     },
     methods: {
-      queryTypes() {
-        axios.get("/shop-type/list")
-          .then(({data}) => {
-            this.types = data;
-          })
-          .catch(err => {
-            this.$message.error(err)
-          })
-      },
       queryHotBlogsScroll() {
         axios.get("/blog/hot?current=" + this.current)
           .then(({data}) => {
@@ -135,6 +134,29 @@
             this.$message.error(err)
           })
       },
+      queryHotTopics() {
+        const previousRanks = {};
+        this.hotTopics.forEach(topic => previousRanks[topic.id] = topic.rank);
+        axios.get("/topics/hot?limit=8")
+          .then(({data}) => {
+            this.hotTopics = data.map(topic => {
+              const previousRank = previousRanks[topic.id];
+              const isUp = previousRank && topic.rank < previousRank;
+              return Object.assign({}, topic, {
+                heat: this.formatHeat(topic.heat),
+                trend: isUp ? "up" : (topic.rank <= 3 ? "hot" : "flat"),
+                trendText: isUp ? "上升" : (topic.rank <= 3 ? "热" : "稳定")
+              });
+            });
+          })
+          .catch(err => console.log("话题榜加载失败", err));
+      },
+      formatHeat(value) {
+        const heat = Number(value || 0);
+        if (heat >= 10000) return (heat / 10000).toFixed(1) + "w";
+        if (heat >= 1000) return (heat / 1000).toFixed(1) + "k";
+        return heat.toString();
+      },
       queryBlogById(b) {
         axios.get("/blog/" + b.id)
           .then(({data}) => {
@@ -147,6 +169,7 @@
           })
       },
       onScroll(e) {
+        if (this.currentTopicId) return;
         let scrollTop = e.target.scrollTop;
         let offsetHeight = e.target.offsetHeight;
         let scrollHeight = e.target.scrollHeight;
@@ -160,14 +183,29 @@
           this.isReachBottom = false
         }
       },
-      toShopList(id, name) {
-        location.href = "/shop-list.html?type=" + id + "&name=" + name
+      goQuickEntry(event, target) {
+        if (!target) return;
+        event.preventDefault();
+        if (document.documentElement.classList.contains("route-leaving")) return;
+        try {
+          sessionStorage.setItem("hy_route_transition", "1");
+        } catch (error) {
+          console.warn("无法记录页面切换状态", error);
+        }
+        document.documentElement.classList.add("route-leaving");
+        window.setTimeout(() => window.location.assign(target), 280);
       },
       toBlogDetail(b) {
         location.href = "/blog-detail.html?id=" + b.id
       },
       toTopic(topic) {
-        location.href = "/shop-list.html?name=" + encodeURIComponent(topic.name)
+        axios.get("/topics/" + topic.id + "/blogs")
+          .then(({data}) => {
+            data.forEach(blog => blog.img = blog.images.split(",")[0]);
+            this.blogs = data;
+            this.$message.success("正在查看 #" + topic.name);
+          })
+          .catch(this.$message.error)
       },
       toPage(i) {
         if (i === 4) {

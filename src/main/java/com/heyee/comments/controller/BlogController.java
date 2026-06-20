@@ -11,6 +11,7 @@ import com.heyee.comments.utils.UserHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
@@ -55,8 +56,12 @@ public class BlogController {
     }
 
     @GetMapping("/{id}")
-    public Result queryBlogById(@PathVariable("id") Long id) {
-        return blogService.queryBlogById(id);
+    public Result queryBlogById(@PathVariable("id") Long id, HttpServletRequest request) {
+        UserDTO user = UserHolder.getUser();
+        String viewerKey = user == null
+                ? "session:" + request.getSession(true).getId()
+                : "user:" + user.getId();
+        return blogService.queryBlogById(id, viewerKey);
     }
 
     @GetMapping("/likes/{id}")

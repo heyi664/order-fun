@@ -313,4 +313,43 @@ Python Agent 完成后，需要满足以下验收条件：
 - RAG 知识库
 - Agent 工具调用记录展示
 - 聊天记录持久化
+## 8. Java MCP Server
 
+Java 服务现已提供只读 MCP Streamable HTTP 端点：
+
+```text
+POST http://127.0.0.1:8081/mcp
+```
+
+协议版本：`2025-03-26`。
+
+生产或跨进程调用时，Java 与 Python 应设置相同的服务令牌：
+
+```env
+MCP_SERVER_URL=http://127.0.0.1:8081/mcp
+MCP_SERVER_TOKEN=change_this_internal_token
+```
+
+Python 请求头：
+
+```http
+Authorization: Bearer change_this_internal_token
+Content-Type: application/json
+Accept: application/json, text/event-stream
+```
+
+当前可发现的工具：
+
+| 工具 | 用途 |
+| --- | --- |
+| `search_shops` | 按关键词或分类搜索商户，可传经纬度按距离查询 |
+| `get_shop_detail` | 查询商户详情 |
+| `list_shop_types` | 查询商户分类 |
+| `list_shop_vouchers` | 查询商户优惠券 |
+| `list_hot_blogs` | 查询热门帖子 |
+| `list_hot_topics` | 查询实时话题榜 |
+| `list_topic_blogs` | 查询话题关联帖子 |
+
+Python Agent 应使用 MCP SDK 的 Streamable HTTP client 连接该地址，启动时调用 `initialize` 和 `tools/list`，再把返回的工具注册给大模型。工具执行统一使用 `tools/call`，业务数据同时出现在 `content[0].text` 和 `structuredContent.data`。
+
+MCP Server 仅暴露只读查询能力，不接受新增、修改、删除和下单操作。浏览器用户 Token 与 MCP 服务令牌彼此独立。

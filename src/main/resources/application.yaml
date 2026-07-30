@@ -18,6 +18,18 @@ spring:
         max-idle: 10
         min-idle: 1
         time-between-eviction-runs: 10s
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+      mail.smtp.ssl.enable: ${MAIL_SMTP_SSL_ENABLE:false}
+      mail.smtp.connectiontimeout: ${MAIL_SMTP_CONNECTION_TIMEOUT:5000}
+      mail.smtp.timeout: ${MAIL_SMTP_TIMEOUT:5000}
+      mail.smtp.writetimeout: ${MAIL_SMTP_WRITE_TIMEOUT:5000}
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
 mybatis-plus:
@@ -28,9 +40,12 @@ logging:
   pattern:
     dateformat: mm:ss.SSS
 agent:
-  service-url: ${AGENT_SERVICE_URL:http://127.0.0.1:8000}
+  service-url: ${AGENT_SERVICE_URL:http://192.168.23.129:8000}
   connect-timeout: ${AGENT_CONNECT_TIMEOUT:3000}
-  read-timeout: ${AGENT_READ_TIMEOUT:30000}
+  read-timeout: ${AGENT_READ_TIMEOUT:90000}
 mcp:
   server:
     token: ${MCP_SERVER_TOKEN:}
+
+heyee:
+  mail:

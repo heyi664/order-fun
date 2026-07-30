@@ -4,6 +4,7 @@ package com.heyee.comments.utils;
  * @author 虎哥
  */
 public abstract class RegexPatterns {
+    public static final int EMAIL_MAX_LENGTH = 191;
     /**
      * 手机号正则
      */

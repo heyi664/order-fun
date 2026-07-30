@@ -20,7 +20,8 @@ public class RegexUtils {
      * @return true:符合，false：不符合
      */
     public static boolean isEmailInvalid(String email){
-        return mismatch(email, RegexPatterns.EMAIL_REGEX);
+        return email == null || email.length() > RegexPatterns.EMAIL_MAX_LENGTH
+                || mismatch(email, RegexPatterns.EMAIL_REGEX);
     }
 
     /**

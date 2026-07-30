@@ -136,3 +136,18 @@ public Result chat(@RequestBody AiChatRequest request) {
 ```
 
 建议限制 `message` 长度，例如 1 到 1000 个字符，并对 AI 服务调用设置超时。
+
+## 4. 流式聊天
+
+```http
+POST /api/ai/chat/stream
+Accept: text/event-stream
+```
+
+请求体与 `/api/ai/chat` 相同。接口会转发 Python Agent 的 SSE 事件；前端使用 `fetch()` 读取响应流并将 `message` 事件中的 `response` 增量立即显示。`meta` 事件会返回 `taskId` 与 `conversationId`。
+
+需要停止时调用：
+
+```http
+POST /api/ai/chat/stream/{taskId}/cancel
+```

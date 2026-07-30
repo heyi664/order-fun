@@ -12,7 +12,7 @@ public class RestTemplateConfig {
     @Value("${agent.connect-timeout:3000}")
     private int connectTimeout;
 
-    @Value("${agent.read-timeout:30000}")
+    @Value("${agent.read-timeout:90000}")
     private int readTimeout;
 
     @Bean

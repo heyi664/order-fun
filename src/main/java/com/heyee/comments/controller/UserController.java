@@ -35,17 +35,17 @@ public class UserController {
     private IUserInfoService userInfoService;
 
     /**
-     * 发送手机验证码
+     * 发送邮箱验证码
      */
     @PostMapping("code")
-    public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
-        // 发送短信验证码并保存验证码
-        return userService.sendCode(phone, session);
+    public Result sendCode(@RequestParam("email") String email, HttpSession session) {
+        // 发送邮件验证码并保存验证码
+        return userService.sendCode(email, session);
     }
 
     /**
      * 登录功能
-     * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
+     * @param loginForm 登录参数，包含邮箱和验证码
      */
     @PostMapping("/login")
     public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){

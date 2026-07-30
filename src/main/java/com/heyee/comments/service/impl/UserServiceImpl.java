@@ -16,6 +16,9 @@ import com.heyee.comments.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -45,49 +48,66 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Resource
     private StringRedisTemplate stringRedisTemplate;
 
+    @Resource
+    private JavaMailSender mailSender;
+
+    @Value("${heyee.mail.from:}")
+    private String mailFrom;
+
     @Override
-    public Result sendCode(String phone, HttpSession session) {
-        phone = phone == null ? null : phone.trim();
-        // 1.校验手机号
-        if (RegexUtils.isPhoneInvalid(phone)) {
+    public Result sendCode(String email, HttpSession session) {
+        email = email == null ? null : email.trim().toLowerCase();
+        // 1.校验邮箱
+        if (RegexUtils.isEmailInvalid(email)) {
             // 2.如果不符合，返回错误信息
-            return Result.fail("手机号格式错误！");
+            return Result.fail("邮箱格式错误！");
         }
-        // 3.符合，生成验证码
+        Boolean sendLockAcquired = stringRedisTemplate.opsForValue().setIfAbsent(
+                LOGIN_CODE_SEND_LOCK_KEY + email, "1", 60, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(sendLockAcquired)) {
+            return Result.fail("验证码已发送，请稍后再试");
+        }
+        // 3.生成验证码并发送邮件
         String code = RandomUtil.randomNumbers(6);
-        log.debug("login code generated, phone={}, code={}", phone, code);
+        try {
+            sendLoginCodeEmail(email, code);
+            stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + email, code, LOGIN_CODE_TTL, TimeUnit.MINUTES);
+        } catch (RuntimeException e) {
+            stringRedisTemplate.delete(LOGIN_CODE_SEND_LOCK_KEY + email);
+            log.error("failed to send login verification email to {}", email, e);
+            return Result.fail("验证码邮件发送失败，请稍后重试");
+        }
 
-        // 4.保存验证码到 session
-        stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL, TimeUnit.MINUTES);
-
+        // 验证码已保存到 Redis
         // 返回ok
         return Result.ok();
     }
 
     @Override
     public Result login(LoginFormDTO loginForm, HttpSession session) {
-        // 1.校验手机号
-        String phone = loginForm.getPhone() == null ? null : loginForm.getPhone().trim();
-        if (RegexUtils.isPhoneInvalid(phone)) {
+        // 1.校验邮箱
+        String email = loginForm.getEmail() == null ? null : loginForm.getEmail().trim().toLowerCase();
+        if (RegexUtils.isEmailInvalid(email)) {
             // 2.如果不符合，返回错误信息
-            return Result.fail("手机号格式错误！");
+            return Result.fail("邮箱格式错误！");
         }
         // 3.从redis获取验证码并校验
-        String cacheCode = stringRedisTemplate.opsForValue().get(LOGIN_CODE_KEY + phone);
+        String cacheCode = stringRedisTemplate.opsForValue().get(LOGIN_CODE_KEY + email);
         String code = loginForm.getCode() == null ? null : loginForm.getCode().trim();
-        if (cacheCode == null || !cacheCode.equals(code)) {
-            log.debug("login code mismatch, phone={}, cacheCode={}, inputCode={}", phone, cacheCode, code);
+        if (RegexUtils.isCodeInvalid(code) || cacheCode == null || !cacheCode.equals(code)) {
+            log.debug("login code mismatch, email={}", email);
             // 不一致，报错
             return Result.fail("验证码错误");
         }
+        stringRedisTemplate.delete(LOGIN_CODE_KEY + email);
 
-        // 4.一致，根据手机号查询用户 select * from tb_user where phone = ?
-        User user = query().eq("phone", phone).one();
+        // 4.一致，根据邮箱查询用户
+        User user = query().eq("email", email).one();
 
         // 5.判断用户是否存在
         if (user == null) {
             // 6.不存在，创建新用户并保存
-            user = createUserWithPhone(phone);
+            user = createUserWithEmail(email);
         }
 
         // 7.保存用户信息到 redis中
@@ -167,10 +187,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.ok(count);
     }
 
-    private User createUserWithPhone(String phone) {
+    private void sendLoginCodeEmail(String email, String code) {
+        if (cn.hutool.core.util.StrUtil.isBlank(mailFrom)) {
+            throw new IllegalStateException("MAIL_FROM must be configured");
+        }
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(mailFrom);
+        message.setTo(email);
+        message.setSubject("HYEEE 登录验证码");
+        message.setText("您的登录验证码是：" + code + "。验证码 " + LOGIN_CODE_TTL + " 分钟内有效，请勿向他人泄露。");
+        mailSender.send(message);
+    }
+
+    private User createUserWithEmail(String email) {
         // 1.创建用户
         User user = new User();
-        user.setPhone(phone);
+        user.setEmail(email);
         user.setNickName(USER_NICK_NAME_PREFIX + RandomUtil.randomString(10));
         // 2.保存用户
         save(user);

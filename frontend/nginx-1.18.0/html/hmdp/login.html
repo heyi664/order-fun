@@ -18,12 +18,12 @@
   <div class="login-container">
     <div class="header">
       <div class="header-back-btn" @click="goBack" ><i class="el-icon-arrow-left"></i></div>
-      <div class="header-title">手机号码快捷登录&nbsp;&nbsp;&nbsp;</div>
+      <div class="header-title">邮箱验证码登录&nbsp;&nbsp;&nbsp;</div>
     </div>
     <div class="content">
       <div class="login-form">
         <div style="display: flex; justify-content: space-between">
-          <el-input style="width: 60%" placeholder="请输入手机号" v-model="form.phone" >
+          <el-input style="width: 60%" type="email" maxlength="191" placeholder="请输入邮箱" v-model="form.email" >
           </el-input>
           <el-button style="width: 38%" @click="sendCode" type="success" :disabled="disabled">{{codeBtnMsg}}</el-button>
         </div>
@@ -31,9 +31,9 @@
         <div style="height: 5px"></div>
         <el-input placeholder="请输入验证码" v-model="form.code">
         </el-input>
-        <div style="text-align: center; color: #8c939d;margin: 5px 0">未注册的手机号码验证后自动创建账户</div>
+        <div style="text-align: center; color: #8c939d;margin: 5px 0">未注册的邮箱验证后自动创建账户</div>
         <el-button @click="login" style="width: 100%; background-color:#f63; color: #fff;">登录</el-button>
-        <div style="text-align: right; color:#333333; margin: 5px 0"><a href="/login2.html">密码登录</a></div>
+        <div style="text-align: right; color:#333333; margin: 5px 0">验证码将发送至该邮箱</div>
       </div>
       <div class="login-radio">
         <div>
@@ -64,6 +64,7 @@
       radio: "",
       disabled: false, // 发送短信按钮
       codeBtnMsg: "发送验证码", // 发送短信按钮提示
+      codeTimer: null,
       form:{
       }
     },
@@ -73,11 +74,11 @@
           this.$message.error("请先确认阅读用户协议！");
           return
         }
-        if(!this.form.phone || !this.form.code){
-          this.$message.error("手机号和验证码不能为空！");
+        if(!this.form.email || !this.form.code){
+          this.$message.error("邮箱和验证码不能为空！");
           return
         }
-        this.form.phone = this.form.phone.trim();
+        this.form.email = this.form.email.trim().toLowerCase();
         this.form.code = this.form.code.trim();
         axios.post("/user/login", this.form)
         .then(({data}) => {
@@ -96,13 +97,17 @@
         history.back();
       },
       sendCode(){
-        if (!this.form.phone) {
-          this.$message.error("手机号不能为空");
+        if (this.disabled) {
           return;
         }
-        this.form.phone = this.form.phone.trim();
-        // 发送验证码
-        axios.post("/user/code?phone="+this.form.phone)
+        if (!this.form.email) {
+          this.$message.error("邮箱不能为空");
+          return;
+        }
+        this.form.email = this.form.email.trim().toLowerCase();
+        this.disabled = true;
+        this.codeBtnMsg = "发送中...";
+        axios.post("/user/code?email=" + encodeURIComponent(this.form.email), null, { timeout: 12000 })
           .then(() => {
             this.$message.success("验证码已发送");
             // 禁用按钮
@@ -110,16 +115,19 @@
             // 按钮倒计时
             let i = 60;
             this.codeBtnMsg = (i--) + '秒后可重发'
-            let taskId = setInterval(() => this.codeBtnMsg = (i--) + '秒后可重发', 1000);
+            this.codeTimer = setInterval(() => this.codeBtnMsg = (i--) + '秒后可重发', 1000);
             setTimeout(() => {
               this.disabled = false;
-              clearInterval(taskId);
+              clearInterval(this.codeTimer);
+              this.codeTimer = null;
               this.codeBtnMsg = "发送验证码";
             }, 59000)
           })
           .catch(err => {
             console.log(err);
-            this.$message.error(err)
+            this.disabled = false;
+            this.codeBtnMsg = "发送验证码";
+            this.$message.error(err || "验证码发送失败，请稍后重试")
           });
       }
     }

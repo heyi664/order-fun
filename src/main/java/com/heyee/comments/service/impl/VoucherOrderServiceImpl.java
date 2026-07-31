@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -50,7 +52,44 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     }
 
     @Override
+    public Result checkSeckillEligibility(Long voucherId, Integer quantity) {
+        if (quantity == null || quantity <= 0) return Result.fail("Purchase quantity must be greater than zero");
+        Voucher voucher = voucherMapper.selectById(voucherId);
+        if (voucher == null || voucher.getType() == null || voucher.getType() != 1
+                || voucher.getStatus() == null || voucher.getStatus() != 1) {
+            return Result.fail("Token package is unavailable");
+        }
+        com.heyee.comments.entity.SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
+        LocalDateTime now = LocalDateTime.now();
+        if (seckillVoucher == null || (seckillVoucher.getBeginTime() != null && now.isBefore(seckillVoucher.getBeginTime()))) {
+            return Result.fail("Token package sale has not started");
+        }
+        if (seckillVoucher.getEndTime() != null && !now.isBefore(seckillVoucher.getEndTime())) {
+            return Result.fail("Token package sale has ended");
+        }
+        int perOrderLimit = voucher.getPerOrderLimit() == null ? 1 : voucher.getPerOrderLimit();
+        int perUserLimit = voucher.getPerUserLimit() == null ? 1 : voucher.getPerUserLimit();
+        if (quantity > perOrderLimit) return Result.fail("Purchase quantity exceeds the per-order limit");
+        String stock = stringRedisTemplate.opsForValue().get(com.heyee.comments.utils.RedisConstants.SECKILL_STOCK_KEY + voucherId);
+        if (stock == null || Long.parseLong(stock) < quantity) return Result.fail("Token package is sold out");
+        Long userId = UserHolder.getUser().getId();
+        Object boughtValue = stringRedisTemplate.opsForHash().get(
+                com.heyee.comments.utils.RedisConstants.SECKILL_USER_COUNT_KEY + voucherId, userId.toString());
+        long bought = boughtValue == null ? 0L : Long.parseLong(boughtValue.toString());
+        if (bought + quantity > perUserLimit) return Result.fail("Purchase quantity exceeds the personal limit");
+        return Result.ok();
+    }
+
+    @Override
     public Result seckillVoucher(Long voucherId, Integer quantity) {
+        return seckillVoucher(voucherId, quantity, UUID.randomUUID().toString());
+    }
+
+    @Override
+    public Result seckillVoucher(Long voucherId, Integer quantity, String paymentRequestId) {
+        if (paymentRequestId == null || !paymentRequestId.matches("[A-Za-z0-9-]{16,64}")) {
+            return Result.fail("Invalid payment request");
+        }
         if (quantity == null || quantity <= 0) return Result.fail("购买数量必须大于 0");
         Voucher voucher = voucherMapper.selectById(voucherId);
         if (voucher == null || voucher.getType() == null || voucher.getType() != 1
@@ -71,10 +110,22 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         if (quantity > perOrderLimit) return Result.fail("超过单次限购数量");
 
         Long userId = UserHolder.getUser().getId();
+        String paymentKey = com.heyee.comments.utils.RedisConstants.SECKILL_PAYMENT_REQUEST_KEY
+                + userId + ":" + paymentRequestId;
+        Boolean firstConfirmation = stringRedisTemplate.opsForValue().setIfAbsent(
+                paymentKey, "PROCESSING", 30, TimeUnit.MINUTES);
+        if (!Boolean.TRUE.equals(firstConfirmation)) {
+            String previousResult = stringRedisTemplate.opsForValue().get(paymentKey);
+            if (previousResult != null && previousResult.startsWith("ORDER:")) {
+                return Result.ok(Long.valueOf(previousResult.substring("ORDER:".length())));
+            }
+            return Result.fail("Payment confirmation is already being processed");
+        }
         long orderId = redisIdWorker.nextId("order");
         Long result = stringRedisTemplate.execute(SECKILL_SCRIPT, Collections.emptyList(),
                 voucherId.toString(), userId.toString(), String.valueOf(orderId), String.valueOf(quantity),
                 String.valueOf(perOrderLimit), String.valueOf(perUserLimit));
+        if (result == null || result != 0) stringRedisTemplate.delete(paymentKey);
         if (result == null) return Result.fail("秒杀服务暂时不可用");
         if (result == 1) return Result.fail("库存不足");
         if (result == 2) return Result.fail("超过每人累计限购数量");
@@ -91,6 +142,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             log.error("秒杀订单消息投递失败，orderId={}", orderId, e);
             throw new IllegalStateException("秒杀订单提交失败，请稍后重试", e);
         }
+        stringRedisTemplate.opsForValue().set(paymentKey, "ORDER:" + orderId, 24, TimeUnit.HOURS);
         return Result.ok(orderId);
     }
 

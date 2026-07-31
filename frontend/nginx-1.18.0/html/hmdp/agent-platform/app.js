@@ -162,6 +162,37 @@
     renderPackages();
     startPackageClock();
   }
+  let pendingPayment = null;
+  function createPaymentRequestId() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    return `payment-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  }
+  function openPayment(pack, quantity) {
+    pendingPayment = { id: String(pack.id), quantity, title: pack.title || 'Token 包', amount: Number(pack.payValue || 0) * quantity, paymentRequestId: createPaymentRequestId() };
+    $('#paymentPackageTitle').textContent = pendingPayment.title;
+    $('#paymentQuantity').textContent = `${quantity} 份`;
+    $('#paymentAmount').textContent = money(pendingPayment.amount);
+    modal('paymentModal', true);
+  }
+  async function seckill(id, quantity = 1) {
+    if (!getToken()) { toast('请先登录后再抢购'); setTimeout(() => { location.href = './login.html'; }, 800); return; }
+    const pack = state.packages.find(item => String(item.id) === String(id));
+    if (!pack) { toast('Token 包不存在或已下架'); return; }
+    try {
+      await api(`/voucher-order/seckill/check/${id}`, { method: 'POST', body: JSON.stringify({ quantity }) });
+      openPayment(pack, quantity);
+    } catch (error) { toast(error.message); }
+  }
+  async function confirmPayment() {
+    if (!pendingPayment) return;
+    const button = $('#confirmPayment'); button.disabled = true; button.textContent = '支付处理中…';
+    try {
+      const orderId = await api(`/voucher-order/seckill/${pendingPayment.id}`, { method: 'POST', body: JSON.stringify({ quantity: pendingPayment.quantity, paymentRequestId: pendingPayment.paymentRequestId }) });
+      modal('paymentModal', false); toast(`支付成功，订单号：${orderId}，请在下方兑换。`);
+      pendingPayment = null; loadPackages(); loadTokenOrders();
+    } catch (error) { toast(error.message); loadPackages(); }
+    finally { button.disabled = false; button.textContent = '确认支付'; }
+  }
   async function loadTokenAccount() {
     if (!getToken()) {
       ['#headerBalance', '#tokenBalance', '#profileToken'].forEach(selector => $(selector).textContent = '--');
@@ -188,11 +219,6 @@
       toast(result.alreadyRedeemed ? '该订单已兑换过。' : `兑换成功，到账 ${Number(result.redeemedAmount || 0).toLocaleString()} Token。`);
       loadTokenAccount(); loadTokenOrders();
     } catch (error) { toast(error.message); }
-  }
-  async function seckill(id, quantity = 1) {
-    if (!getToken()) { toast('请先登录后再抢购'); setTimeout(() => { location.href = './login.html'; }, 800); return; }
-    if (!id) return;
-    try { const orderId = await api(`/voucher-order/seckill/${id}`, { method: 'POST', body: JSON.stringify({ quantity }) }); toast(`抢购成功，订单号：${orderId}，请在下方兑换。`); loadTokenOrders(); } catch (error) { toast(error.message); }
   }
   async function toggleLike(id) {
     if (!getToken()) { toast('请先登录后点赞'); return; }
@@ -307,6 +333,7 @@
     $('#tokenPackages').addEventListener('click', event => { const button = event.target.closest('[data-seckill]'); if (button) { const input = $('[data-quantity]', button.closest('.package-card')); seckill(button.dataset.seckill, Number(input && input.value || 1)); } });
     $('#tokenOrders').addEventListener('click', event => { const button = event.target.closest('[data-redeem]'); if (button) redeemOrder(button.dataset.redeem); });
     $('#refreshTokenOrders').addEventListener('click', () => { loadTokenAccount(); loadTokenOrders(); });
+    $('#confirmPayment').addEventListener('click', confirmPayment);
     $('#newChat').addEventListener('click', () => { state.messages = []; state.conversationId = ''; sessionStorage.removeItem('agent_hub_messages'); sessionStorage.removeItem('agent_hub_conversation_id'); renderChat(); });
     $('#sendChat').addEventListener('click', sendChat); $('#chatInput').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendChat(); } });
     $('#quickPrompts').innerHTML = ['如何为知识库问答设计提问模板？', '帮我梳理一个 Agent 工作流。', 'RAG 检索效果不稳定，该如何排查？'].map(text => `<button data-prompt="${escapeHtml(text)}">${escapeHtml(text)} →</button>`).join('');

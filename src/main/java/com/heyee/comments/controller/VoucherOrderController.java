@@ -28,11 +28,18 @@ public class VoucherOrderController {
     @Resource
     private IVoucherOrderService voucherOrderService;
 
+    @PostMapping("seckill/check/{id}")
+    public Result checkSeckillEligibility(@PathVariable("id") Long voucherId,
+                                          @RequestBody(required = false) SeckillOrderRequestDTO request) {
+        return voucherOrderService.checkSeckillEligibility(voucherId, request == null ? 1 : request.getQuantity());
+    }
+
     @PostMapping("seckill/{id}")
     @RateLimiter(key = "rate_limit:seckill:", window = 10, limit = 5,
             type = RateLimiter.LimitType.USER, message = "秒杀请求过于频繁，请稍后再试")
     public Result seckillVoucher(@PathVariable("id") Long voucherId,
                                  @RequestBody(required = false) SeckillOrderRequestDTO request) {
-        return voucherOrderService.seckillVoucher(voucherId, request == null ? 1 : request.getQuantity());
+        return voucherOrderService.seckillVoucher(voucherId, request == null ? 1 : request.getQuantity(),
+                request == null ? null : request.getPaymentRequestId());
     }
 }

@@ -25,6 +25,9 @@ public class McpController {
     @Value("${mcp.server.token:}")
     private String serverToken;
 
+    @Value("${mcp.server.allow-anonymous:false}")
+    private boolean allowAnonymous;
+
     public McpController(McpServerService mcpServerService, ObjectMapper objectMapper) {
         this.mcpServerService = mcpServerService;
         this.objectMapper = objectMapper;
@@ -60,7 +63,7 @@ public class McpController {
 
     private boolean isAuthorized(String authorization, String tokenHeader) {
         if (!StringUtils.hasText(serverToken)) {
-            return true;
+            return allowAnonymous;
         }
         String provided = tokenHeader;
         if (StringUtils.hasText(authorization) && authorization.startsWith("Bearer ")) {

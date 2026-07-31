@@ -7,6 +7,7 @@ import com.heyee.comments.entity.Voucher;
 import com.heyee.comments.mapper.VoucherMapper;
 import com.heyee.comments.service.ISeckillVoucherService;
 import com.heyee.comments.service.IVoucherService;
+import com.heyee.comments.service.cache.VoucherListCacheService;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,13 +32,20 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
     private ISeckillVoucherService seckillVoucherService;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private VoucherListCacheService voucherListCacheService;
 
     @Override
     public Result queryVoucherOfShop(Long shopId) {
         // 查询优惠券信息
-        List<Voucher> vouchers = getBaseMapper().queryVoucherOfShop(shopId);
+        List<Voucher> vouchers = voucherListCacheService.getVoucherByShopId(shopId);
         // 返回结果
         return Result.ok(vouchers);
+    }
+
+    @Override
+    public Result queryTokenPacks() {
+        return Result.ok(baseMapper.queryTokenPacks());
     }
 
     @Override
@@ -54,5 +62,6 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
         seckillVoucherService.save(seckillVoucher);
         // 保存秒杀库存到Redis中
         stringRedisTemplate.opsForValue().set(SECKILL_STOCK_KEY + voucher.getId(), voucher.getStock().toString());
+        voucherListCacheService.evictVoucherList(voucher.getShopId());
     }
 }

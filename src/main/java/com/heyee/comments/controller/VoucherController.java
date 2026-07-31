@@ -54,4 +54,9 @@ public class VoucherController {
     public Result queryVoucherOfShop(@PathVariable("shopId") Long shopId) {
        return voucherService.queryVoucherOfShop(shopId);
     }
+
+    @GetMapping("/token-packs")
+    public Result queryTokenPacks() {
+        return voucherService.queryTokenPacks();
+    }
 }

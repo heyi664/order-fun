@@ -230,6 +230,7 @@ CREATE TABLE `tb_voucher`  (
   `rules` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '使用规则',
   `pay_value` bigint(10) UNSIGNED NOT NULL COMMENT '支付金额，单位是分。例如200代表2元',
   `actual_value` bigint(10) NOT NULL COMMENT '抵扣金额，单位是分。例如200代表2元',
+  `token_amount` bigint(20) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Token 包可兑换的 Token 数量',
   `type` tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '0,普通券；1,秒杀券',
   `status` tinyint(1) UNSIGNED NOT NULL DEFAULT 1 COMMENT '1,上架; 2,下架; 3,过期',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -240,7 +241,7 @@ CREATE TABLE `tb_voucher`  (
 -- ----------------------------
 -- Records of tb_voucher
 -- ----------------------------
-INSERT INTO `tb_voucher` VALUES (1, 1, '50元代金券', '周一至周日均可使用', '全场通用\\n无需预约\\n可无限叠加\\不兑现、不找零\\n仅限堂食', 4750, 5000, 0, 1, '2022-01-04 09:42:39', '2022-01-04 09:43:31');
+INSERT INTO `tb_voucher` VALUES (1, 1, '50元代金券', '周一至周日均可使用', '全场通用\\n无需预约\\n可无限叠加\\不兑现、不找零\\n仅限堂食', 4750, 5000, 0, 0, 1, '2022-01-04 09:42:39', '2022-01-04 09:43:31');
 
 -- ----------------------------
 -- Table structure for tb_voucher_order
@@ -263,5 +264,44 @@ CREATE TABLE `tb_voucher_order`  (
 -- ----------------------------
 -- Records of tb_voucher_order
 -- ----------------------------
+
+-- ----------------------------
+-- Table structure for Token account and transactions
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_user_token_account`;
+CREATE TABLE `tb_user_token_account` (
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `balance` bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `tb_token_transaction`;
+CREATE TABLE `tb_token_transaction` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `amount` bigint(20) UNSIGNED NOT NULL,
+  `type` varchar(32) NOT NULL,
+  `source_order_id` bigint(20) NOT NULL,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_token_transaction_order_type` (`source_order_id`, `type`),
+  KEY `idx_token_transaction_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- Table structure for post favorites
+-- ----------------------------
+DROP TABLE IF EXISTS `tb_blog_favorite`;
+CREATE TABLE `tb_blog_favorite` (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) UNSIGNED NOT NULL,
+  `blog_id` bigint(20) UNSIGNED NOT NULL,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_blog_favorite_user_blog` (`user_id`, `blog_id`),
+  KEY `idx_blog_favorite_user_time` (`user_id`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

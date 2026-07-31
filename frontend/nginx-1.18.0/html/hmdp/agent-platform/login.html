@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#edf7ff">
+  <title>登录 · HYEEE Agent Hub</title>
+  <link rel="stylesheet" href="./login.css">
+</head>
+<body>
+  <main class="login-page">
+    <a class="brand" href="./" aria-label="返回 Agent Hub"><span>H</span><div><b>HYEEE</b><small>AGENT HUB</small></div></a>
+    <section class="login-layout">
+      <div class="login-copy">
+        <p class="eyebrow">WELCOME BACK</p>
+        <h1>登录后，继续探索<br>你的 Agent 工作流。</h1>
+        <p>在社区记录实践，在热榜发现新思路，用 AI 对话解决问题。</p>
+        <div class="feature-list"><div><i>✦</i><span><b>社区协作</b><small>和真实使用者交流经验</small></span></div><div><i>#</i><span><b>实时热榜</b><small>快速发现正在发生的讨论</small></span></div><div><i>◇</i><span><b>Token 服务</b><small>统一管理你的 AI 使用额度</small></span></div></div>
+      </div>
+      <section class="login-card" aria-labelledby="loginTitle">
+        <a class="back-link" href="./">← 返回平台</a>
+        <p class="eyebrow">SIGN IN</p>
+        <h2 id="loginTitle">使用邮箱登录</h2>
+        <p class="subtitle">验证码将发送到你的邮箱；首次验证会自动创建账号。</p>
+        <form id="loginForm" novalidate>
+          <label>邮箱地址<input id="email" name="email" type="email" inputmode="email" autocomplete="email" maxlength="191" placeholder="name@example.com" required></label>
+          <div class="code-row"><label>验证码<input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="输入 6 位验证码" required></label><button id="sendCode" type="button">发送验证码</button></div>
+          <label class="agreement"><input id="agreement" type="checkbox" required><span>我已阅读并同意 <a href="javascript:void(0)">用户服务协议</a> 与 <a href="javascript:void(0)">隐私政策</a></span></label>
+          <button id="loginButton" class="login-button" type="submit">登录并进入平台 <span>→</span></button>
+        </form>
+        <p id="formMessage" class="form-message" aria-live="polite"></p>
+      </section>
+    </section>
+    <footer>© HYEEE Agent Hub · 简约、安全、开放的 Agent 社区</footer>
+  </main>
+  <script src="./login.js"></script>
+</body>
+</html>

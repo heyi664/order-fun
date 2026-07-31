@@ -63,6 +63,9 @@ public class Voucher implements Serializable {
      */
     private Long actualValue;
 
+    /** Token 包可兑换的 Token 数量；普通代金券为 0。 */
+    private Long tokenAmount;
+
     /**
      * 优惠券类型
      */

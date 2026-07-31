@@ -5,6 +5,7 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.heyee.comments.dto.Result;
 import com.heyee.comments.entity.Shop;
+import com.heyee.comments.limiter.annotation.RateLimiter;
 import com.heyee.comments.service.IShopService;
 import com.heyee.comments.utils.SystemConstants;
 import org.springframework.web.bind.annotation.*;
@@ -66,6 +67,8 @@ public class ShopController {
      * @return 商铺列表
      */
     @GetMapping("/of/type")
+    @RateLimiter(key = "rate_limit:shop_type:", window = 60, limit = 120,
+            type = RateLimiter.LimitType.IP, message = "商铺查询过于频繁，请稍后再试")
     public Result queryShopByType(
             @RequestParam("typeId") Integer typeId,
             @RequestParam(value = "current", defaultValue = "1") Integer current,

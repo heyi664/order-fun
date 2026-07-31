@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#edf7ff">
+  <title>HYEEE Agent Hub</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./token-features.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#community" aria-label="HYEEE Agent Hub 首页">
+        <span class="brand-mark">H</span>
+        <span><b>HYEEE</b><small>AGENT HUB</small></span>
+      </a>
+      <nav class="nav-list" aria-label="主导航">
+        <a href="#community" data-route="community"><i>⌂</i>社区</a>
+        <a href="#topics" data-route="topics"><i>#</i>热榜</a>
+        <a href="#tokens" data-route="tokens"><i>◇</i>Token 包</a>
+        <a href="#chat" data-route="chat"><i>✦</i>AI 对话</a>
+        <a href="#profile" data-route="profile"><i>◯</i>我的</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="ghost-btn" id="newPostButton">＋ 发布帖子</button>
+        <p>简约、开放的 AI 用户社区</p>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="打开菜单">☰</button>
+        <div class="global-search"><span>⌕</span><input id="globalSearch" placeholder="搜索帖子或话题，例如 #RAG" autocomplete="off"></div>
+        <div class="top-actions">
+          <span class="token-chip" title="Token 余额需 Token 账户接口支持">Token <b id="headerBalance">--</b></span>
+          <button class="avatar-button" id="profileButton" aria-label="个人中心">U</button>
+        </div>
+      </header>
+
+      <section id="communityPage" class="page active">
+        <div class="page-heading community-heading">
+          <div><p class="eyebrow">AGENT COMMUNITY</p><h1>与使用者一起，把 Agent 用得更好</h1><p>分享真实工作流、提出问题、交流经验。</p></div>
+          <button class="primary-btn" id="openComposer">＋ 发布帖子</button>
+        </div>
+        <div class="community-layout">
+          <section>
+            <div class="feed-tabs"><button class="active" data-feed="hot">推荐</button><button data-feed="follow">关注</button><span id="feedStatus"></span></div>
+            <div id="postFeed" class="post-feed"></div>
+            <button id="loadMorePosts" class="load-more">加载更多</button>
+          </section>
+          <aside class="right-rail">
+            <div class="panel hot-panel"><div class="panel-title"><span>热门话题</span><a href="#topics">全部 →</a></div><div id="hotTopicPreview"></div></div>
+            <div class="panel tip-panel"><span class="tip-icon">✦</span><b>写一篇好帖子</b><p>用 <code>#话题</code> 标记场景，例如 <code>#工作流</code>、<code>#RAG</code>。</p></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="topicsPage" class="page">
+        <div class="page-heading"><div><p class="eyebrow">TOPIC RANKING</p><h1>话题热榜</h1><p>热度由帖子浏览、点赞与评论实时累积。</p></div></div>
+        <div class="topic-layout"><section id="topicRank" class="topic-rank"></section><aside class="panel topic-explain"><b>热度说明</b><p>浏览、互动与讨论都会让相关话题获得更高热度。</p><p>点击任一话题，即可查看关联帖子。</p></aside></div>
+        <section id="topicPosts" class="topic-posts hidden"><div class="section-heading"><div><p class="eyebrow">TOPIC POSTS</p><h2 id="activeTopicName">话题帖子</h2></div><button class="text-btn" id="closeTopicPosts">收起</button></div><div id="topicPostFeed" class="post-feed"></div></section>
+      </section>
+
+      <section id="tokensPage" class="page">
+        <div class="page-heading"><div><p class="eyebrow">TOKEN MARKET</p><h1>优惠 Token 包</h1><p>限量抢购，兑换后可用于 AI 对话。</p></div><div class="balance-card"><span>当前 Token 余额</span><strong id="tokenBalance">--</strong><small>等待 Token 账户接口接入</small></div></div>
+        <div class="notice"><span>i</span> 当前页面已复用项目的秒杀下单接口。Token 入账与订单兑换需后端提供账户能力后才会生效。</div>
+        <div id="tokenPackages" class="package-grid"></div>
+        <section class="token-orders panel"><div class="panel-title"><span>我的 Token 包订单</span><button id="refreshTokenOrders" class="text-btn">刷新</button></div><div id="tokenOrders" class="token-order-list"></div></section>
+      </section>
+
+      <section id="chatPage" class="page chat-page">
+        <div class="chat-side"><div class="chat-brand"><span>✦</span><div><b>Agent Assistant</b><small>基于知识库的智能问答</small></div></div><button id="newChat" class="secondary-btn">＋ 新会话</button><p class="side-label">推荐提问</p><div id="quickPrompts" class="quick-prompts"></div><div class="chat-side-note">对话由已接入的 Python RAG 服务流式生成。</div></div>
+        <div class="chat-workspace"><header><div><p class="eyebrow">AI WORKBENCH</p><h2 id="chatTitle">新的 AI 对话</h2></div><span id="chatStatus" class="online-status">● 在线</span></header><div id="messageList" class="message-list"></div><div class="chat-composer"><textarea id="chatInput" rows="2" placeholder="输入你的问题，Enter 发送，Shift + Enter 换行"></textarea><div><span>请勿在对话中输入敏感信息</span><button id="sendChat" class="primary-btn">发送 ↑</button></div></div></div>
+      </section>
+
+      <section id="profilePage" class="page">
+        <div class="profile-hero"><div class="profile-avatar" id="profileAvatar">U</div><div><p class="eyebrow">MY SPACE</p><h1 id="profileName">我的空间</h1><p id="profileIntro">登录后查看你的帖子、收藏和 Token 使用情况。</p></div><div class="profile-actions"><button id="profileLogin" class="secondary-btn">登录</button><button id="logoutButton" class="text-btn" hidden>退出登录</button></div></div>
+        <div class="profile-stats"><div><strong id="myPostCount">--</strong><span>我的帖子</span></div><div><strong>--</strong><span>收藏帖子</span></div><div><strong id="profileToken">--</strong><span>Token 余额</span></div></div>
+        <div class="profile-layout"><section class="panel"><div class="panel-title"><span>我的帖子</span></div><div id="myPosts" class="mini-post-list"></div></section><aside class="panel"><div class="panel-title"><span>我的收藏</span></div><div id="myFavorites" class="mini-post-list"></div></aside></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="composerModal" class="modal" aria-hidden="true"><div class="modal-card composer-card"><button class="modal-close" data-close="composerModal">×</button><p class="eyebrow">CREATE POST</p><h2>发布一条帖子</h2><form id="postForm"><label>标题<input name="title" maxlength="100" required placeholder="用一句话概括你的经验或问题"></label><label>内容<textarea name="content" maxlength="2000" required placeholder="分享你的 Agent 使用场景、过程和收获。输入 #话题 参与讨论。"></textarea></label><div class="form-row"><label class="upload-field">添加图片<input id="postImages" type="file" accept="image/*" multiple><span>＋ 选择图片</span></label><div id="imagePreview" class="image-preview"></div></div><p class="form-hint">可用话题格式：#RAG #提示词工程 #工作流</p><div class="form-actions"><button type="button" class="secondary-btn" data-close="composerModal">取消</button><button class="primary-btn" type="submit">发布帖子</button></div></form></div></div>
+  <div id="postModal" class="modal" aria-hidden="true"><div class="modal-card detail-card"><button class="modal-close" data-close="postModal">×</button><div id="postDetail"></div></div></div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="./app.js"></script>
+</body>
+</html>

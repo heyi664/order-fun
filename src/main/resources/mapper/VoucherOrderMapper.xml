@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.heyee.comments.mapper.VoucherOrderMapper">
+    <select id="queryTokenOrders" resultType="com.heyee.comments.dto.TokenPackageOrderDTO">
+        SELECT o.id AS id, o.voucher_id AS voucherId, v.title AS title,
+               v.token_amount AS tokenAmount, o.status AS status, o.create_time AS createTime,
+               CASE WHEN t.id IS NULL THEN FALSE ELSE TRUE END AS redeemed
+        FROM tb_voucher_order o
+        INNER JOIN tb_voucher v ON v.id = o.voucher_id AND v.token_amount > 0
+        LEFT JOIN tb_token_transaction t ON t.source_order_id = o.id AND t.type = 'TOKEN_PACK_REDEEM'
+        WHERE o.user_id = #{userId}
+        ORDER BY o.create_time DESC
+    </select>
+</mapper>

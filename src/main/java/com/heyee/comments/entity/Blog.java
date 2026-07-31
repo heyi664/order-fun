@@ -56,6 +56,10 @@ public class Blog implements Serializable {
     @TableField(exist = false)
     private Boolean isLike;
 
+    /** 当前用户是否已收藏。 */
+    @TableField(exist = false)
+    private Boolean isFavorite;
+
     /**
      * 标题
      */

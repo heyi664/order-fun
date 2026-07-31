@@ -5,7 +5,7 @@ spring:
     name: heyee-comments
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/hycomment?useSSL=false&serverTimezone=UTC}
+    url: ${MYSQL_URL:jdbc:mysql://127.0.0.1:3306/hycomment?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD}
   redis:
@@ -43,9 +43,21 @@ agent:
   service-url: ${AGENT_SERVICE_URL:http://192.168.23.129:8000}
   connect-timeout: ${AGENT_CONNECT_TIMEOUT:3000}
   read-timeout: ${AGENT_READ_TIMEOUT:90000}
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:192.168.23.129:9876}
+  producer:
+    group: ${ROCKETMQ_PRODUCER_GROUP:heyee-seckill-producer}
 mcp:
   server:
     token: ${MCP_SERVER_TOKEN:}
+    allow-anonymous: ${MCP_ALLOW_ANONYMOUS:false}
 
 heyee:
   mail:
+    from: ${MAIL_FROM:${MAIL_USERNAME:}}
+  cache:
+    voucher-list:
+      mode: caffeine
+      refresh-after-write: 5s
+      expire-after-write: 10m
+      redis-ttl: 30m

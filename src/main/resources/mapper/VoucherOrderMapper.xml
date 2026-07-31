@@ -3,7 +3,7 @@
 <mapper namespace="com.heyee.comments.mapper.VoucherOrderMapper">
     <select id="queryTokenOrders" resultType="com.heyee.comments.dto.TokenPackageOrderDTO">
         SELECT o.id AS id, o.voucher_id AS voucherId, v.title AS title,
-               v.token_amount AS tokenAmount, o.status AS status, o.create_time AS createTime,
+               v.token_amount AS tokenAmount, o.quantity AS quantity, o.status AS status, o.create_time AS createTime,
                CASE WHEN t.id IS NULL THEN FALSE ELSE TRUE END AS redeemed
         FROM tb_voucher_order o
         INNER JOIN tb_voucher v ON v.id = o.voucher_id AND v.token_amount > 0

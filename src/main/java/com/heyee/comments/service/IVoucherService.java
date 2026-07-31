@@ -2,6 +2,7 @@ package com.heyee.comments.service;
 
 import com.heyee.comments.dto.Result;
 import com.heyee.comments.entity.Voucher;
+import com.heyee.comments.dto.TokenPackPublishDTO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -17,6 +18,8 @@ public interface IVoucherService extends IService<Voucher> {
     Result queryVoucherOfShop(Long shopId);
 
     Result queryTokenPacks();
+
+    Result publishTokenPack(TokenPackPublishDTO request);
 
     void addSeckillVoucher(Voucher voucher);
 }

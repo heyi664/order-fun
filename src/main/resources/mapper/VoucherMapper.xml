@@ -5,7 +5,7 @@
     <select id="queryVoucherOfShop" resultType="com.heyee.comments.entity.Voucher" parameterType="java.lang.Long">
         SELECT
             v.`id`, v.`shop_id`, v.`title`, v.`sub_title`, v.`rules`, v.`pay_value`,
-            v.`actual_value`, v.`token_amount`, v.`type`, sv.`stock` , sv.begin_time , sv.end_time
+            v.`actual_value`, v.`token_amount`, v.`per_order_limit`, v.`per_user_limit`, v.`type`, sv.`stock` , sv.begin_time , sv.end_time
         FROM tb_voucher v
         LEFT JOIN  tb_seckill_voucher sv ON v.id = sv.voucher_id
         WHERE v.shop_id = #{shopId} AND v.status = 1
@@ -14,10 +14,11 @@
     <select id="queryTokenPacks" resultType="com.heyee.comments.entity.Voucher">
         SELECT
             v.`id`, v.`shop_id`, v.`title`, v.`sub_title`, v.`rules`, v.`pay_value`,
-            v.`actual_value`, v.`token_amount`, v.`type`, sv.`stock`, sv.begin_time, sv.end_time
+            v.`actual_value`, v.`token_amount`, v.`per_order_limit`, v.`per_user_limit`, v.`type`, sv.`stock`, sv.begin_time, sv.end_time
         FROM tb_voucher v
         LEFT JOIN tb_seckill_voucher sv ON v.id = sv.voucher_id
         WHERE v.status = 1 AND v.type = 1 AND v.token_amount > 0
+          AND sv.end_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)
         ORDER BY v.id DESC
     </select>
 </mapper>

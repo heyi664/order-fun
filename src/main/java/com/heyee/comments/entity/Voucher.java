@@ -66,6 +66,12 @@ public class Voucher implements Serializable {
     /** Token 包可兑换的 Token 数量；普通代金券为 0。 */
     private Long tokenAmount;
 
+    /** Maximum number of packages a user can buy in one order. */
+    private Integer perOrderLimit;
+
+    /** Maximum number of packages a user can buy in total. */
+    private Integer perUserLimit;
+
     /**
      * 优惠券类型
      */

@@ -2,10 +2,12 @@ package com.heyee.comments.controller;
 
 
 import com.heyee.comments.dto.Result;
+import com.heyee.comments.dto.SeckillOrderRequestDTO;
 import com.heyee.comments.limiter.annotation.RateLimiter;
 import com.heyee.comments.service.IVoucherOrderService;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
@@ -29,7 +31,8 @@ public class VoucherOrderController {
     @PostMapping("seckill/{id}")
     @RateLimiter(key = "rate_limit:seckill:", window = 10, limit = 5,
             type = RateLimiter.LimitType.USER, message = "秒杀请求过于频繁，请稍后再试")
-    public Result seckillVoucher(@PathVariable("id") Long voucherId) {
-        return voucherOrderService.seckillVoucher(voucherId);
+    public Result seckillVoucher(@PathVariable("id") Long voucherId,
+                                 @RequestBody(required = false) SeckillOrderRequestDTO request) {
+        return voucherOrderService.seckillVoucher(voucherId, request == null ? 1 : request.getQuantity());
     }
 }

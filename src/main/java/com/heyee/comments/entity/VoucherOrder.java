@@ -42,6 +42,9 @@ public class VoucherOrder implements Serializable {
      */
     private Long voucherId;
 
+    /** 本订单购买的套餐份数。 */
+    private Integer quantity;
+
     /**
      * 支付方式 1：余额支付；2：支付宝；3：微信
      */

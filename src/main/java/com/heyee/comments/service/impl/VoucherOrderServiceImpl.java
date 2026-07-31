@@ -2,7 +2,9 @@ package com.heyee.comments.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.heyee.comments.dto.Result;
+import com.heyee.comments.entity.Voucher;
 import com.heyee.comments.entity.VoucherOrder;
+import com.heyee.comments.mapper.VoucherMapper;
 import com.heyee.comments.mapper.VoucherOrderMapper;
 import com.heyee.comments.service.ISeckillVoucherService;
 import com.heyee.comments.service.IVoucherOrderService;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.Collections;
 
 @Slf4j
@@ -28,47 +31,60 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         implements IVoucherOrderService {
 
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
-
     static {
         SECKILL_SCRIPT = new DefaultRedisScript<>();
         SECKILL_SCRIPT.setLocation(new ClassPathResource("seckill.lua"));
         SECKILL_SCRIPT.setResultType(Long.class);
     }
 
-    @Resource
-    private ISeckillVoucherService seckillVoucherService;
-    @Resource
-    private RedisIdWorker redisIdWorker;
-    @Resource
-    private RedissonClient redissonClient;
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
-    @Resource
-    private RocketMQTemplate rocketMQTemplate;
+    @Resource private ISeckillVoucherService seckillVoucherService;
+    @Resource private RedisIdWorker redisIdWorker;
+    @Resource private RedissonClient redissonClient;
+    @Resource private StringRedisTemplate stringRedisTemplate;
+    @Resource private RocketMQTemplate rocketMQTemplate;
+    @Resource private VoucherMapper voucherMapper;
 
     @Override
     public Result seckillVoucher(Long voucherId) {
+        return seckillVoucher(voucherId, 1);
+    }
+
+    @Override
+    public Result seckillVoucher(Long voucherId, Integer quantity) {
+        if (quantity == null || quantity <= 0) return Result.fail("购买数量必须大于 0");
+        Voucher voucher = voucherMapper.selectById(voucherId);
+        if (voucher == null || voucher.getType() == null || voucher.getType() != 1
+                || voucher.getStatus() == null || voucher.getStatus() != 1) {
+            return Result.fail("Token 包不存在或已下架");
+        }
+        com.heyee.comments.entity.SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
+        LocalDateTime now = LocalDateTime.now();
+        if (seckillVoucher == null) return Result.fail("Token package activity does not exist");
+        if (seckillVoucher.getBeginTime() != null && now.isBefore(seckillVoucher.getBeginTime())) {
+            return Result.fail("Token package sale has not started");
+        }
+        if (seckillVoucher.getEndTime() != null && !now.isBefore(seckillVoucher.getEndTime())) {
+            return Result.fail("Token package sale has ended");
+        }
+        int perOrderLimit = voucher.getPerOrderLimit() == null ? 1 : voucher.getPerOrderLimit();
+        int perUserLimit = voucher.getPerUserLimit() == null ? 1 : voucher.getPerUserLimit();
+        if (quantity > perOrderLimit) return Result.fail("超过单次限购数量");
+
         Long userId = UserHolder.getUser().getId();
         long orderId = redisIdWorker.nextId("order");
-        Long result = stringRedisTemplate.execute(
-                SECKILL_SCRIPT,
-                Collections.emptyList(),
-                voucherId.toString(), userId.toString(), String.valueOf(orderId)
-        );
-        if (result == null) {
-            return Result.fail("秒杀服务暂时不可用");
-        }
-        if (result == 1) {
-            return Result.fail("库存不足");
-        }
-        if (result == 2) {
-            return Result.fail("不能重复下单");
-        }
+        Long result = stringRedisTemplate.execute(SECKILL_SCRIPT, Collections.emptyList(),
+                voucherId.toString(), userId.toString(), String.valueOf(orderId), String.valueOf(quantity),
+                String.valueOf(perOrderLimit), String.valueOf(perUserLimit));
+        if (result == null) return Result.fail("秒杀服务暂时不可用");
+        if (result == 1) return Result.fail("库存不足");
+        if (result == 2) return Result.fail("超过每人累计限购数量");
+        if (result == 3) return Result.fail("超过单次限购数量");
 
         VoucherOrder voucherOrder = new VoucherOrder();
         voucherOrder.setId(orderId);
         voucherOrder.setUserId(userId);
         voucherOrder.setVoucherId(voucherId);
+        voucherOrder.setQuantity(quantity);
         try {
             rocketMQTemplate.syncSend(RocketMqConstants.SECKILL_VOUCHER_ORDER_TOPIC, voucherOrder);
         } catch (Exception e) {
@@ -83,30 +99,26 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     public void createVoucherOrder(VoucherOrder voucherOrder) {
         Long userId = voucherOrder.getUserId();
         Long voucherId = voucherOrder.getVoucherId();
-        RLock redisLock = redissonClient.getLock("lock:order:" + userId);
-        if (!redisLock.tryLock()) {
-            throw new IllegalStateException("获取秒杀订单锁失败");
-        }
+        int quantity = voucherOrder.getQuantity() == null ? 1 : voucherOrder.getQuantity();
+        RLock redisLock = redissonClient.getLock("lock:order:" + userId + ":" + voucherId);
+        if (!redisLock.tryLock()) throw new IllegalStateException("获取秒杀订单锁失败");
         try {
-            boolean exists = query()
-                    .eq("user_id", userId)
-                    .eq("voucher_id", voucherId)
-                    .count() > 0;
-            if (exists) {
-                log.info("忽略重复秒杀消息：userId={}, voucherId={}", userId, voucherId);
+            if (getById(voucherOrder.getId()) != null) {
+                log.info("忽略重复秒杀消息：orderId={}", voucherOrder.getId());
                 return;
             }
+            Voucher voucher = voucherMapper.selectById(voucherId);
+            if (voucher == null) throw new IllegalStateException("Token 包不存在");
+            int perUserLimit = voucher.getPerUserLimit() == null ? 1 : voucher.getPerUserLimit();
+            Long purchased = baseMapper.sumQuantityByUserVoucher(userId, voucherId);
+            if ((purchased == null ? 0L : purchased) + quantity > perUserLimit) {
+                throw new IllegalStateException("超过每人累计限购数量");
+            }
             boolean stockUpdated = seckillVoucherService.update()
-                    .setSql("stock = stock - 1")
-                    .eq("voucher_id", voucherId)
-                    .gt("stock", 0)
-                    .update();
-            if (!stockUpdated) {
-                throw new IllegalStateException("数据库库存扣减失败");
-            }
-            if (!save(voucherOrder)) {
-                throw new IllegalStateException("秒杀订单保存失败");
-            }
+                    .setSql("stock = stock - " + quantity)
+                    .eq("voucher_id", voucherId).ge("stock", quantity).update();
+            if (!stockUpdated) throw new IllegalStateException("数据库库存扣减失败");
+            if (!save(voucherOrder)) throw new IllegalStateException("秒杀订单保存失败");
         } finally {
             redisLock.unlock();
         }

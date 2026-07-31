@@ -66,15 +66,17 @@ public class TokenAccountServiceImpl implements ITokenAccountService {
             TokenAccount account = findOrCreateAccount(userId);
             TokenTransaction transaction = new TokenTransaction();
             transaction.setUserId(userId);
-            transaction.setAmount(voucher.getTokenAmount());
+            long quantity = order.getQuantity() == null ? 1L : order.getQuantity();
+            long redeemedAmount = Math.multiplyExact(voucher.getTokenAmount(), quantity);
+            transaction.setAmount(redeemedAmount);
             transaction.setType(REDEEM_TYPE);
             transaction.setSourceOrderId(orderId);
             tokenTransactionMapper.insert(transaction);
-            if (tokenAccountMapper.incrementBalance(userId, voucher.getTokenAmount()) != 1) {
+            if (tokenAccountMapper.incrementBalance(userId, redeemedAmount) != 1) {
                 throw new IllegalStateException("Token 余额更新失败");
             }
-            account.setBalance(account.getBalance() + voucher.getTokenAmount());
-            return Result.ok(toRedeemDTO(account, voucher.getTokenAmount(), false));
+            account.setBalance(account.getBalance() + redeemedAmount);
+            return Result.ok(toRedeemDTO(account, redeemedAmount, false));
         } finally {
             if (lock.isHeldByCurrentThread()) lock.unlock();
         }

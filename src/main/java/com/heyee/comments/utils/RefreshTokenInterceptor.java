@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.heyee.comments.utils.RedisConstants.LOGIN_USER_KEY;
+import static com.heyee.comments.utils.RedisConstants.ADMIN_LOGIN_TOKEN_KEY;
 import static com.heyee.comments.utils.RedisConstants.LOGIN_USER_TTL;
 
 public class RefreshTokenInterceptor implements HandlerInterceptor {
@@ -32,6 +33,10 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
         // 2.基于TOKEN获取redis中的用户
         String key  = LOGIN_USER_KEY + token;
         Map<Object, Object> userMap = stringRedisTemplate.opsForHash().entries(key);
+        if (userMap.isEmpty()) {
+            key = ADMIN_LOGIN_TOKEN_KEY + token;
+            userMap = stringRedisTemplate.opsForHash().entries(key);
+        }
         // 3.判断用户是否存在
         if (userMap.isEmpty()) {
             return true;

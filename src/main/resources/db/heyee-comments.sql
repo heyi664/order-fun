@@ -172,6 +172,26 @@ INSERT INTO `tb_shop_type` VALUES (10, '美睫·美甲', '/types/mjmj.png', 4, '
 -- ----------------------------
 -- Table structure for tb_user
 -- ----------------------------
+DROP TABLE IF EXISTS `tb_admin_setting`;
+DROP TABLE IF EXISTS `tb_admin_user`;
+CREATE TABLE `tb_admin_user`  (
+  `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `username` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `password_hash` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_admin_username` (`username`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '管理员账号';
+
+CREATE TABLE `tb_admin_setting`  (
+  `setting_key` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `setting_value` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+  `updated_by` bigint(20) UNSIGNED NULL DEFAULT NULL,
+  `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`setting_key`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci COMMENT = '管理员安全设置';
+
 DROP TABLE IF EXISTS `tb_user`;
 CREATE TABLE `tb_user`  (
   `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -231,6 +251,8 @@ CREATE TABLE `tb_voucher`  (
   `pay_value` bigint(10) UNSIGNED NOT NULL COMMENT '支付金额，单位是分。例如200代表2元',
   `actual_value` bigint(10) NOT NULL COMMENT '抵扣金额，单位是分。例如200代表2元',
   `token_amount` bigint(20) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Token 包可兑换的 Token 数量',
+  `per_order_limit` int(11) UNSIGNED NOT NULL DEFAULT 1 COMMENT '每人单次可购买数量',
+  `per_user_limit` int(11) UNSIGNED NOT NULL DEFAULT 1 COMMENT '每人累计可购买数量',
   `type` tinyint(1) UNSIGNED NOT NULL DEFAULT 0 COMMENT '0,普通券；1,秒杀券',
   `status` tinyint(1) UNSIGNED NOT NULL DEFAULT 1 COMMENT '1,上架; 2,下架; 3,过期',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -241,7 +263,7 @@ CREATE TABLE `tb_voucher`  (
 -- ----------------------------
 -- Records of tb_voucher
 -- ----------------------------
-INSERT INTO `tb_voucher` VALUES (1, 1, '50元代金券', '周一至周日均可使用', '全场通用\\n无需预约\\n可无限叠加\\不兑现、不找零\\n仅限堂食', 4750, 5000, 0, 0, 1, '2022-01-04 09:42:39', '2022-01-04 09:43:31');
+INSERT INTO `tb_voucher` VALUES (1, 1, '50元代金券', '周一至周日均可使用', '全场通用\\n无需预约\\n可无限叠加\\不兑现、不找零\\n仅限堂食', 4750, 5000, 0, 1, 1, 0, 1, '2022-01-04 09:42:39', '2022-01-04 09:43:31');
 
 -- ----------------------------
 -- Table structure for tb_voucher_order
@@ -251,6 +273,7 @@ CREATE TABLE `tb_voucher_order`  (
   `id` bigint(20) NOT NULL COMMENT '主键',
   `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '下单的用户id',
   `voucher_id` bigint(20) UNSIGNED NOT NULL COMMENT '购买的代金券id',
+  `quantity` int(11) UNSIGNED NOT NULL DEFAULT 1 COMMENT '本订单购买份数',
   `pay_type` tinyint(1) UNSIGNED NOT NULL DEFAULT 1 COMMENT '支付方式 1：余额支付；2：支付宝；3：微信',
   `status` tinyint(1) UNSIGNED NOT NULL DEFAULT 1 COMMENT '订单状态，1：未支付；2：已支付；3：已核销；4：已取消；5：退款中；6：已退款',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '下单时间',

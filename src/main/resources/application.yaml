@@ -53,6 +53,8 @@ mcp:
     allow-anonymous: ${MCP_ALLOW_ANONYMOUS:false}
 
 heyee:
+  admin:
+    bootstrap-registration-code: ${ADMIN_BOOTSTRAP_REGISTER_CODE:}
   mail:
     from: ${MAIL_FROM:${MAIL_USERNAME:}}
   cache:

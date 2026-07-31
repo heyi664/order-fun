@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Token 包管理 · HYEEE Agent Hub</title>
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+<main class="admin-shell">
+  <header><a class="brand" href="./"><span>H</span><div><b>HYEEE</b><small>AGENT HUB · ADMIN</small></div></a><div class="header-actions"><a class="back" href="./">← 返回用户端</a><button id="logout" class="text-button" type="button">退出管理员登录</button></div></header>
+  <section class="hero"><p>ADMIN CONSOLE</p><h1>发布优惠 Token 包</h1><span>配置价格、Token 数、总库存与购买上限后，即可在 Token 商城展示。</span></section>
+  <section class="admin-layout">
+    <form id="publishForm" class="panel">
+      <div class="panel-heading"><div><p>CREATE TOKEN PACK</p><h2>套餐配置</h2></div><span class="required">* 为必填项</span></div>
+      <div class="form-grid">
+        <label class="full">套餐名称 *<input name="title" maxlength="80" required placeholder="例如：创作者 Token 包"></label>
+        <label>价格（元）*<input name="price" type="number" min="0.01" step="0.01" required placeholder="9.90"></label>
+        <label>每份 Token 数 *<input name="tokenAmount" type="number" min="1" step="1" required placeholder="20000"></label>
+        <label>总库存（份）*<input name="stock" type="number" min="1" step="1" required placeholder="100"></label>
+        <label>每人单次限购（份）*<input name="perOrderLimit" type="number" min="1" step="1" value="1" required></label>
+        <label>每人累计限购（份）*<input name="perUserLimit" type="number" min="1" step="1" value="1" required></label>
+        <label>开抢时间 *<input id="beginTime" name="beginTime" type="datetime-local" required></label>
+        <label>结束时间 *<input id="endTime" name="endTime" type="datetime-local" required></label>
+        <label class="full">说明<textarea name="description" maxlength="255" placeholder="例如：适用于 RAG 对话、工作流调试和内容生成。"></textarea></label>
+      </div>
+      <div class="form-actions"><span id="message" role="status"></span><button id="publishButton" type="submit">发布 Token 包 →</button></div>
+    </form>
+    <aside class="preview panel"><p>LIVE PREVIEW</p><h2>发布前预览</h2><div class="pack-preview"><span>限量 Token 包</span><h3 id="previewTitle">未命名 Token 包</h3><strong id="previewPrice">¥0.00</strong><b id="previewTokens">0 Token / 份</b><div><em id="previewStock">库存 0 份</em><em id="previewLimit">单次 1 · 累计 1</em></div></div><ul><li>价格以元填写，服务端会自动换算为分。</li><li>累计限购不能小于单次限购。</li><li>提交后请等待开抢时间到达。</li></ul></aside>
+  </section>
+  <section class="panel published"><div class="panel-heading"><div><p>PUBLISHED PACKS</p><h2>当前已发布 Token 包</h2></div><button id="refresh" class="text-button" type="button">刷新</button></div><div id="packageList" class="package-list"></div></section>
+  <section class="panel security-panel"><div><p>ADMIN SECURITY</p><h2>管理员注册校验码</h2><span>用于后续管理员账号注册，请使用至少 6 位且不易猜测的字符串。</span></div><form id="registrationCodeForm" class="security-form"><input id="newRegistrationCode" type="password" minlength="6" autocomplete="new-password" placeholder="设置新的管理员注册校验码" required><button type="submit">更新校验码</button><small id="securityMessage"></small></form></section>
+</main>
+<script src="./admin.js"></script>
+</body>
+</html>

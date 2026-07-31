@@ -103,7 +103,7 @@
   }
   function money(value) { return `¥${(Number(value || 0) / 100).toFixed(2)}`; }
   function renderPackages() {
-    $('#tokenPackages').innerHTML = state.packages.length ? state.packages.map((pack, index) => `<article class="package-card ${pack.featured || index === 1 ? 'featured' : ''}"><span class="pack-tag">限量 Token 包</span><h2>${escapeHtml(pack.title || 'Token Pack')}</h2><p>${escapeHtml(pack.subTitle || '抢购后可兑换为 AI 对话 Token。')}</p><div class="package-price">${money(pack.payValue)} <small>· ${Number(pack.tokenAmount || 0).toLocaleString()} Token</small></div><div class="package-meta"><span>剩余 ${pack.stock ?? '--'} 份</span><span>${pack.beginTime ? '限时抢购' : '活动中'}</span></div><button class="primary-btn" data-seckill="${pack.id || ''}" ${pack.stock === 0 ? 'disabled' : ''}>${pack.stock === 0 ? '已抢完' : '立即抢购'}</button></article>`).join('') : '<div class="empty-feed">暂无可抢购的 Token 包。</div>';
+    $('#tokenPackages').innerHTML = state.packages.length ? state.packages.map((pack, index) => { const perOrder = Number(pack.perOrderLimit || 1); return `<article class="package-card ${pack.featured || index === 1 ? 'featured' : ''}"><span class="pack-tag">限量 Token 包</span><h2>${escapeHtml(pack.title || 'Token Pack')}</h2><p>${escapeHtml(pack.subTitle || '抢购后可兑换为 AI 对话 Token。')}</p><div class="package-price">${money(pack.payValue)} <small>· ${Number(pack.tokenAmount || 0).toLocaleString()} Token</small></div><div class="package-meta"><span>剩余 ${pack.stock ?? '--'} 份</span><span>单次限购 ${perOrder} 份</span></div><label class="package-quantity">购买数量 <input data-quantity type="number" min="1" max="${perOrder}" value="1"></label><button class="primary-btn" data-seckill="${pack.id || ''}" ${pack.stock === 0 ? 'disabled' : ''}>${pack.stock === 0 ? '已抢完' : '立即抢购'}</button></article>`; }).join('') : '<div class="empty-feed">暂无可抢购的 Token 包。</div>';
   }
   async function loadPackages() {
     try {
@@ -112,6 +112,55 @@
       state.packages = list.map((item, index) => Object.assign({}, item, { featured: index === 1 }));
     } catch (error) { state.packages = []; toast(`Token 包加载失败：${error.message}`); }
     renderPackages();
+  }
+  let packageClock = null;
+  let packageRefreshTick = 0;
+  function countdownText(milliseconds) {
+    const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+    return `${days} 天 : ${String(hours).padStart(2, '0')} 时 : ${String(minutes).padStart(2, '0')} 分 : ${String(remainingSeconds).padStart(2, '0')} 秒`;
+  }
+  function packageSaleState(pack, now = Date.now()) {
+    const beginAt = Date.parse(pack.beginTime || '');
+    const endAt = Date.parse(pack.endTime || '');
+    if (Number.isFinite(endAt) && now >= endAt) return { type: 'ended', text: '已结束', endAt };
+    if (Number.isFinite(beginAt) && now < beginAt) return { type: 'upcoming', text: `距开抢 ${countdownText(beginAt - now)}`, endAt };
+    if (Number(pack.stock || 0) <= 0) return { type: 'sold-out', text: '已售罄', endAt };
+    return { type: 'active', text: Number.isFinite(endAt) ? `距结束 ${countdownText(endAt - now)}` : '抢购进行中', endAt };
+  }
+  function renderPackages() {
+    const now = Date.now();
+    const visiblePackages = state.packages.filter(pack => {
+      const endAt = Date.parse(pack.endTime || '');
+      return !Number.isFinite(endAt) || now - endAt < 15 * 60 * 1000;
+    });
+    $('#tokenPackages').innerHTML = visiblePackages.length ? visiblePackages.map((pack, index) => {
+      const perOrder = Number(pack.perOrderLimit || 1);
+      const sale = packageSaleState(pack, now);
+      const disabled = sale.type !== 'active';
+      const buttonText = sale.type === 'upcoming' ? '即将开抢' : sale.type === 'ended' ? '已结束' : sale.type === 'sold-out' ? '已售罄' : '立即抢购';
+      return `<article class="package-card ${pack.featured || index === 1 ? 'featured' : ''} ${disabled ? 'sale-closed' : ''}"><span class="pack-tag">限量 Token 包</span><h2>${escapeHtml(pack.title || 'Token Pack')}</h2><p>${escapeHtml(pack.subTitle || '抢购后可兑换为 AI 对话 Token。')}</p><div class="package-price">${money(pack.payValue)} <small>· ${Number(pack.tokenAmount || 0).toLocaleString()} Token</small></div><div class="package-meta"><span>剩余 ${pack.stock ?? '--'} 份</span><span>单次限购 ${perOrder} 份</span></div><div class="sale-countdown ${sale.type}">${sale.text}</div><label class="package-quantity">购买数量 <input data-quantity type="number" min="1" max="${perOrder}" value="1" ${disabled ? 'disabled' : ''}></label><button class="primary-btn ${disabled ? 'sale-disabled' : ''}" data-seckill="${pack.id || ''}" ${disabled ? 'disabled' : ''}>${buttonText}</button></article>`;
+    }).join('') : '<div class="empty-feed">暂无可展示的 Token 包。</div>';
+  }
+  function startPackageClock() {
+    if (packageClock) return;
+    packageClock = window.setInterval(() => {
+      renderPackages();
+      packageRefreshTick += 1;
+      if (packageRefreshTick % 30 === 0) loadPackages();
+    }, 1000);
+  }
+  async function loadPackages() {
+    try {
+      const data = await api('/voucher/token-packs');
+      const list = Array.isArray(data) ? data : [];
+      state.packages = list.map((item, index) => Object.assign({}, item, { featured: index === 1 }));
+    } catch (error) { state.packages = []; toast(`Token 包加载失败：${error.message}`); }
+    renderPackages();
+    startPackageClock();
   }
   async function loadTokenAccount() {
     if (!getToken()) {
@@ -130,7 +179,7 @@
     target.innerHTML = '<div class="empty-feed">加载订单中…</div>';
     try {
       const orders = await api('/token-account/orders');
-      target.innerHTML = orders.length ? orders.map(order => `<article class="token-order"><div class="token-order-copy"><b>${escapeHtml(order.title || 'Token 包')}</b><span>订单 ${order.id} · ${dateText(order.createTime)}</span></div><strong class="token-order-amount">${Number(order.tokenAmount || 0).toLocaleString()} Token</strong>${order.redeemed ? '<span class="topic-tag">已兑换</span>' : `<button class="secondary-btn" data-redeem="${order.id}">兑换</button>`}</article>`).join('') : '<div class="empty-feed">还没有 Token 包订单。</div>';
+      target.innerHTML = orders.length ? orders.map(order => { const quantity = Number(order.quantity || 1); const amount = Number(order.tokenAmount || 0) * quantity; return `<article class="token-order"><div class="token-order-copy"><b>${escapeHtml(order.title || 'Token 包')}</b><span>订单 ${order.id} · ${quantity} 份 · ${dateText(order.createTime)}</span></div><strong class="token-order-amount">${amount.toLocaleString()} Token</strong>${order.redeemed ? '<span class="topic-tag">已兑换</span>' : `<button class="secondary-btn" data-redeem="${order.id}">兑换</button>`}</article>`; }).join('') : '<div class="empty-feed">还没有 Token 包订单。</div>';
     } catch (error) { target.innerHTML = `<div class="empty-feed">${escapeHtml(error.message)}</div>`; }
   }
   async function redeemOrder(orderId) {
@@ -140,10 +189,10 @@
       loadTokenAccount(); loadTokenOrders();
     } catch (error) { toast(error.message); }
   }
-  async function seckill(id) {
+  async function seckill(id, quantity = 1) {
     if (!getToken()) { toast('请先登录后再抢购'); setTimeout(() => { location.href = './login.html'; }, 800); return; }
     if (!id) return;
-    try { const orderId = await api(`/voucher-order/seckill/${id}`, { method: 'POST' }); toast(`抢购成功，订单号：${orderId}，请在下方兑换。`); loadTokenOrders(); } catch (error) { toast(error.message); }
+    try { const orderId = await api(`/voucher-order/seckill/${id}`, { method: 'POST', body: JSON.stringify({ quantity }) }); toast(`抢购成功，订单号：${orderId}，请在下方兑换。`); loadTokenOrders(); } catch (error) { toast(error.message); }
   }
   async function toggleLike(id) {
     if (!getToken()) { toast('请先登录后点赞'); return; }
@@ -255,7 +304,7 @@
     $('.feed-tabs').addEventListener('click', event => { const button = event.target.closest('[data-feed]'); if (!button || button.dataset.feed === state.feed) return; state.feed = button.dataset.feed; setActiveFeed(); loadPosts(true); });
     $('#loadMorePosts').addEventListener('click', () => loadPosts());
     $('#postImages').addEventListener('change', event => uploadImages(event.target.files)); $('#postForm').addEventListener('submit', event => { event.preventDefault(); createPost(event.currentTarget); });
-    $('#tokenPackages').addEventListener('click', event => { const button = event.target.closest('[data-seckill]'); if (button) seckill(button.dataset.seckill); });
+    $('#tokenPackages').addEventListener('click', event => { const button = event.target.closest('[data-seckill]'); if (button) { const input = $('[data-quantity]', button.closest('.package-card')); seckill(button.dataset.seckill, Number(input && input.value || 1)); } });
     $('#tokenOrders').addEventListener('click', event => { const button = event.target.closest('[data-redeem]'); if (button) redeemOrder(button.dataset.redeem); });
     $('#refreshTokenOrders').addEventListener('click', () => { loadTokenAccount(); loadTokenOrders(); });
     $('#newChat').addEventListener('click', () => { state.messages = []; state.conversationId = ''; sessionStorage.removeItem('agent_hub_messages'); sessionStorage.removeItem('agent_hub_conversation_id'); renderChat(); });

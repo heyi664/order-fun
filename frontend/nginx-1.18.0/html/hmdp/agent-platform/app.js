@@ -2,6 +2,7 @@
   'use strict';
 
   const API = '/api';
+  const LOGIN_INTENT_KEY = 'agent_hub_login_intent';
   const state = {
     route: 'community', feed: 'hot', page: 1, posts: [], topics: [],
     activeTopic: null, packages: [], conversationId: sessionStorage.getItem('agent_hub_conversation_id') || '',
@@ -17,6 +18,17 @@
     return String(value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
   }
   function getToken() { return sessionStorage.getItem('token') || ''; }
+  function currentRoute() {
+    const route = location.hash.replace('#', '');
+    return ['community', 'topics', 'tokens', 'chat', 'profile'].includes(route) ? route : 'community';
+  }
+  function requireLogin(intent = {}) {
+    if (getToken()) return false;
+    const route = intent.route || currentRoute();
+    sessionStorage.setItem(LOGIN_INTENT_KEY, JSON.stringify(Object.assign({}, intent, { route })));
+    location.href = `./login.html?next=${encodeURIComponent(`./#${route}`)}`;
+    return true;
+  }
   function initials(name = 'U') { return escapeHtml(String(name).trim().slice(0, 1).toUpperCase() || 'U'); }
   function toast(message) {
     const el = $('#toast'); el.textContent = message; el.classList.add('show');
@@ -175,7 +187,7 @@
     modal('paymentModal', true);
   }
   async function seckill(id, quantity = 1) {
-    if (!getToken()) { toast('请先登录后再抢购'); setTimeout(() => { location.href = './login.html'; }, 800); return; }
+    if (requireLogin({ action: 'tokens', route: 'tokens' })) return;
     const pack = state.packages.find(item => String(item.id) === String(id));
     if (!pack) { toast('Token 包不存在或已下架'); return; }
     try {
@@ -221,7 +233,7 @@
     } catch (error) { toast(error.message); }
   }
   async function toggleLike(id) {
-    if (!getToken()) { toast('请先登录后点赞'); return; }
+    if (requireLogin({ action: 'like', postId: String(id), route: 'community' })) return;
     try { await api(`/blog/like/${id}`, { method: 'PUT' }); await refreshPost(id); } catch (error) { toast(error.message); }
   }
   async function refreshPost(id) {
@@ -230,11 +242,11 @@
     if ($('#postModal').classList.contains('open')) openPost(id);
   }
   async function toggleFavorite(id, button) {
-    if (!getToken()) { toast('请先登录后收藏'); return; }
+    if (requireLogin({ action: 'favorite', postId: String(id), route: 'community' })) return;
     try {
       const result = await api(`/blog/favorites/${id}`, { method: 'PUT' });
       const favorited = Boolean(result && result.favorited);
-      button.classList.toggle('liked', favorited); button.textContent = `♧ ${favorited ? '已收藏' : '收藏'}`;
+      if (button) { button.classList.toggle('liked', favorited); button.textContent = `♧ ${favorited ? '已收藏' : '收藏'}`; }
     } catch (error) { toast(error.message); }
   }
   async function openPost(id, focusComment = false) {
@@ -251,7 +263,7 @@
     } catch (error) { $('#postDetail').innerHTML = `<div class="empty-feed">${escapeHtml(error.message)}</div>`; }
   }
   async function addComment(form) {
-    if (!getToken()) { toast('请先登录后评论'); return; }
+    if (requireLogin({ action: 'comment', postId: String(form.dataset.commentForm), route: 'community' })) return;
     const content = new FormData(form).get('content').trim(); if (!content) return;
     try { await api('/blog-comments', { method: 'POST', body: JSON.stringify({ blogId: Number(form.dataset.commentForm), content }) }); toast('评论已发布'); openPost(form.dataset.commentForm, false); } catch (error) { toast(error.message); }
   }
@@ -263,13 +275,14 @@
     $('#imagePreview').innerHTML = state.uploading.map(src => `<img src="${escapeHtml(src)}" alt="预览">`).join('');
   }
   async function createPost(form) {
-    if (!getToken()) { toast('请先登录后发布'); return; }
+    if (requireLogin({ action: 'compose', route: 'community' })) return;
     const data = new FormData(form); const title = String(data.get('title') || '').trim(); const content = String(data.get('content') || '').trim(); if (!title || !content) return;
     try { await api('/blog', { method: 'POST', body: JSON.stringify({ title, content, images: state.uploading.join(',') }) }); toast('帖子已发布'); form.reset(); state.uploading = []; $('#imagePreview').innerHTML = ''; modal('composerModal', false); state.feed = 'hot'; setActiveFeed(); loadPosts(true); loadTopics(); } catch (error) { toast(error.message); }
   }
   function setActiveFeed() { $$('.feed-tabs button').forEach(btn => btn.classList.toggle('active', btn.dataset.feed === state.feed)); }
   function setRoute() {
-    const route = location.hash.replace('#', '') || 'community'; state.route = ['community', 'topics', 'tokens', 'chat', 'profile'].includes(route) ? route : 'community';
+    state.route = currentRoute();
+    if (state.route === 'chat' && requireLogin({ action: 'chat', route: 'chat' })) return;
     $$('.page').forEach(page => page.classList.toggle('active', page.id === `${state.route}Page`));
     $$('.nav-list a').forEach(link => link.classList.toggle('active', link.dataset.route === state.route));
     $('.sidebar').classList.remove('open');
@@ -294,6 +307,7 @@
     if (type === 'error' || type === 'reject') message.content = message.content || payload.message || '本次对话未能完成。';
   }
   async function sendChat() {
+    if (requireLogin({ action: 'chat', route: 'chat' })) return;
     const input = $('#chatInput'); const content = input.value.trim(); if (!content || state.streaming) return;
     state.messages.push({ role: 'user', content }); input.value = ''; const answer = { role: 'assistant', content: '', thinking: '', streaming: true }; state.messages.push(answer); state.streaming = true; $('#sendChat').disabled = true; $('#chatStatus').textContent = '● 生成中'; renderChat();
     try {
@@ -322,9 +336,40 @@
     try { await api('/user/logout', { method: 'POST' }); } catch (error) { toast(error.message); return; }
     sessionStorage.removeItem('token'); state.user = null; toast('已退出登录'); loadProfile(); loadTokenAccount(); loadTokenOrders();
   }
+  function openComposer() {
+    if (requireLogin({ action: 'compose', route: 'community' })) return;
+    modal('composerModal', true);
+  }
+  async function resumeLoginIntent() {
+    if (!getToken()) return;
+    const intent = readSession(LOGIN_INTENT_KEY, null);
+    if (!intent) return;
+    sessionStorage.removeItem(LOGIN_INTENT_KEY);
+    if (!intent.action) return;
+    if (intent.route && currentRoute() !== intent.route) location.hash = intent.route;
+    switch (intent.action) {
+      case 'compose':
+        modal('composerModal', true);
+        break;
+      case 'chat':
+        $('#chatInput').focus();
+        break;
+      case 'like':
+        await toggleLike(intent.postId);
+        break;
+      case 'favorite':
+        await toggleFavorite(intent.postId, document.querySelector(`[data-favorite="${intent.postId}"]`));
+        break;
+      case 'comment':
+        await openPost(intent.postId, true);
+        break;
+      default:
+        break;
+    }
+  }
   function bindEvents() {
     window.addEventListener('hashchange', setRoute); $('#mobileMenu').addEventListener('click', () => $('.sidebar').classList.toggle('open'));
-    $('#openComposer').addEventListener('click', () => modal('composerModal', true)); $('#newPostButton').addEventListener('click', () => modal('composerModal', true));
+    $('#openComposer').addEventListener('click', openComposer); $('#newPostButton').addEventListener('click', openComposer);
     $$('.modal').forEach(el => el.addEventListener('click', event => { if (event.target === el) modal(el.id, false); }));
     $$('[data-close]').forEach(button => button.addEventListener('click', () => modal(button.dataset.close, false)));
     $('.feed-tabs').addEventListener('click', event => { const button = event.target.closest('[data-feed]'); if (!button || button.dataset.feed === state.feed) return; state.feed = button.dataset.feed; setActiveFeed(); loadPosts(true); });
@@ -338,19 +383,19 @@
     $('#sendChat').addEventListener('click', sendChat); $('#chatInput').addEventListener('keydown', event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendChat(); } });
     $('#quickPrompts').innerHTML = ['如何为知识库问答设计提问模板？', '帮我梳理一个 Agent 工作流。', 'RAG 检索效果不稳定，该如何排查？'].map(text => `<button data-prompt="${escapeHtml(text)}">${escapeHtml(text)} →</button>`).join('');
     $('#quickPrompts').addEventListener('click', event => { const button = event.target.closest('[data-prompt]'); if (!button) return; $('#chatInput').value = button.dataset.prompt; sendChat(); });
-    $('#profileButton').addEventListener('click', () => { location.hash = 'profile'; }); $('#profileLogin').addEventListener('click', () => { if (!getToken()) location.href = './login.html'; }); $('#logoutButton').addEventListener('click', logout);
+    $('#profileButton').addEventListener('click', () => { location.hash = 'profile'; }); $('#profileLogin').addEventListener('click', () => requireLogin({ route: 'profile' })); $('#logoutButton').addEventListener('click', logout);
     $('#globalSearch').addEventListener('keydown', event => { if (event.key === 'Enter') { const value = event.currentTarget.value.trim().replace(/^#/, ''); const topic = state.topics.find(item => item.name === value); if (topic) openTopic(topic.id); else toast('暂未找到该话题，可在社区发布带 # 的帖子创建它。'); } });
     document.addEventListener('click', event => {
       const topic = event.target.closest('[data-topic-id]'); if (topic) { openTopic(topic.dataset.topicId); return; }
       const topicByName = event.target.closest('[data-topic-name]'); if (topicByName) { const item = state.topics.find(row => row.name === topicByName.dataset.topicName); if (item) openTopic(item.id); else toast('该话题正在收录中'); return; }
       const like = event.target.closest('[data-like]'); if (like) { toggleLike(like.dataset.like); return; }
-      const comment = event.target.closest('[data-comment]'); if (comment) { openPost(comment.dataset.comment, true); return; }
+      const comment = event.target.closest('[data-comment]'); if (comment) { if (requireLogin({ action: 'comment', postId: comment.dataset.comment, route: 'community' })) return; openPost(comment.dataset.comment, true); return; }
       const open = event.target.closest('[data-open-post]'); if (open) { openPost(open.dataset.openPost); return; }
       const favorite = event.target.closest('[data-favorite]'); if (favorite) toggleFavorite(favorite.dataset.favorite, favorite);
     });
     $('#postDetail').addEventListener('submit', event => { if (event.target.matches('[data-comment-form]')) { event.preventDefault(); addComment(event.target); } });
     $('#closeTopicPosts').addEventListener('click', () => $('#topicPosts').classList.add('hidden'));
   }
-  async function init() { bindEvents(); setRoute(); renderChat(); await Promise.all([loadPosts(true), loadTopics(), loadPackages(), loadTokenAccount()]); }
+  async function init() { bindEvents(); setRoute(); renderChat(); await Promise.all([loadPosts(true), loadTopics(), loadPackages(), loadTokenAccount()]); await resumeLoginIntent(); }
   init();
 })();

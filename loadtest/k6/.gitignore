@@ -1,0 +1,5 @@
+# 本地压测结果和可能包含认证令牌的环境文件
+results/
+.env
+k6.env
+seckill-summary.json

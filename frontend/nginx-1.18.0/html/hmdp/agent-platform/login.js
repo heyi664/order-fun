@@ -25,6 +25,10 @@
     $('#registrationCodeRow').hidden = true;
   }
   function validEmail() { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#email').value.trim()); }
+  function userReturnTarget() {
+    const next = new URLSearchParams(location.search).get('next') || '';
+    return next.startsWith('./') && !next.startsWith('//') ? next : './';
+  }
   function startCountdown() {
     let seconds = 60; const button = $('#sendCode'); button.disabled = true;
     const tick = () => { button.textContent = `${seconds} 秒后重发`; seconds -= 1; if (seconds < 0) { clearInterval(timer); timer = null; button.disabled = false; button.textContent = '发送验证码'; } };
@@ -50,7 +54,7 @@
     if (mode === 'user') {
       if (!validEmail() || !$('#code').value.trim()) return setMessage('请输入邮箱和验证码。', 'error');
       if (!$('#agreement').checked) return setMessage('请先同意服务协议与隐私政策。', 'error');
-      path = '/user/login'; body = { email: $('#email').value.trim().toLowerCase(), code: $('#code').value.trim() }; target = './';
+      path = '/user/login'; body = { email: $('#email').value.trim().toLowerCase(), code: $('#code').value.trim() }; target = userReturnTarget();
     } else {
       const username = $('#adminUsername').value.trim(); const password = $('#adminPassword').value;
       if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username) || password.length < 8) return setMessage('请输入合法账号和至少 8 位密码。', 'error');

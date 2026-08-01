@@ -21,6 +21,9 @@ docker compose ps
 `.env` 中所有 `CHANGE_ME` 值必须替换为随机的私密值。例如可用
 `openssl rand -hex 32` 生成密码或令牌。不要把 `.env` 提交到 Git。
 
+Compose 会把 MySQL、JDBC 和 Java 统一配置为 `Asia/Shanghai`。管理端发布 Token 包时，应按
+北京时间填写开始和结束时间。
+
 首次创建 `mysql-data` 卷时，MySQL 会自动导入 `deploy/mysql/schema.sql`。这是一份部署专用的
 完整 schema，覆盖当前 Java 实体所需的全部表与字段。新库**不要**再运行 `db/migrations` 下的脚本；
 增量脚本只用于升级历史数据库，并且应根据该数据库已有的版本选择性执行。

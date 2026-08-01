@@ -43,15 +43,28 @@ services:
     command: sh mqnamesrv
     environment:
       JAVA_OPT_EXT: -Xms128m -Xmx128m -Xmn64m
+
+  # Docker creates a new named volume as root-owned. The official RocketMQ image
+  # runs its broker as UID/GID 3000, so initialise the data volume once before
+  # starting the non-root Broker process.
+  broker-init:
+    image: apache/rocketmq:4.9.6
+    user: "0:0"
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command: mkdir -p /home/rocketmq/store && chown -R 3000:3000 /home/rocketmq/store
     volumes:
-      - namesrv-data:/home/rocketmq/logs
+      - broker-data:/home/rocketmq/store
 
   broker:
     image: apache/rocketmq:4.9.6
     restart: unless-stopped
     command: sh mqbroker -n namesrv:9876 -c /home/rocketmq/rocketmq-4.9.6/conf/broker.conf
     depends_on:
-      - namesrv
+      namesrv:
+        condition: service_started
+      broker-init:
+        condition: service_completed_successfully
     environment:
       JAVA_OPT_EXT: -Xms256m -Xmx256m -Xmn128m -XX:MaxMetaspaceSize=128m
     volumes:
@@ -121,5 +134,4 @@ services:
 volumes:
   mysql-data:
   redis-data:
-  namesrv-data:
   broker-data:

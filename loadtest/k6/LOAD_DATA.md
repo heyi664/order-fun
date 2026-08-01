@@ -7,6 +7,15 @@ Set-Location E:\JavaProject\heyee-comments\loadtest\k6
 .\generate-loadtest-data.ps1 -Count 100
 ```
 
+For a later batch, choose an unused user-ID range. For example:
+
+```powershell
+.\generate-loadtest-data.ps1 -Count 100000 -StartUserId 910000001
+```
+
+The generated email and nickname include the user ID, so independently generated
+batches do not conflict with the `tb_user.email` unique index.
+
 The command generates three ignored, secret-bearing files:
 
 - `k6.env`: tokens consumed by `token-pack-seckill.js`.

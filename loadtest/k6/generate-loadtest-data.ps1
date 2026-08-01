@@ -27,8 +27,10 @@ $redisCommands = New-Object System.Text.StringBuilder
 for ($slot = 1; $slot -le $Count; $slot++) {
     $userId = $StartUserId + $slot - 1
     $token = New-LoadTestToken
-    $nickName = "loadtest_$slot"
-    $email = "loadtest-$slot@example.test"
+    # Use the user ID rather than the batch-local slot. This keeps email and
+    # nickname unique when several load-test batches are generated.
+    $nickName = "loadtest_$userId"
+    $email = "loadtest-$userId@example.test"
 
     [void]$tokens.Add($token)
     [void]$userSql.AppendLine("INSERT INTO tb_user (id, email, nick_name, icon, create_time, update_time) VALUES ($userId, '$email', '$nickName', '', NOW(), NOW()) ON DUPLICATE KEY UPDATE email = VALUES(email), nick_name = VALUES(nick_name), icon = VALUES(icon), update_time = NOW();")

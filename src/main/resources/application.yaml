@@ -36,7 +36,7 @@ mybatis-plus:
   type-aliases-package: com.heyee.comments.entity # 别名扫描包
 logging:
   level:
-    com.heyee.comments: debug
+    com.heyee.comments: ${LOG_LEVEL_COM_HEYEE:INFO}
   pattern:
     dateformat: mm:ss.SSS
 agent:

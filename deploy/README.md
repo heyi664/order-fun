@@ -24,6 +24,9 @@ docker compose ps
 Compose 会把 MySQL、JDBC 和 Java 统一配置为 `Asia/Shanghai`。管理端发布 Token 包时，应按
 北京时间填写开始和结束时间。
 
+默认日志级别为 `INFO`，不会输出每条 SQL 的 DEBUG 日志。短时排障时可在 `.env` 设置
+`LOG_LEVEL_COM_HEYEE=DEBUG`，修改后重建 `app` 容器；压测和日常运行应保持 `INFO`。
+
 首次创建 `mysql-data` 卷时，MySQL 会自动导入 `deploy/mysql/schema.sql`。这是一份部署专用的
 完整 schema，覆盖当前 Java 实体所需的全部表与字段。新库**不要**再运行 `db/migrations` 下的脚本；
 增量脚本只用于升级历史数据库，并且应根据该数据库已有的版本选择性执行。

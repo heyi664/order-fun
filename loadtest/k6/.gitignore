@@ -2,4 +2,6 @@
 results/
 .env
 k6.env
+load-users.sql
+load-redis.txt
 seckill-summary.json

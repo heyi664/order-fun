@@ -71,10 +71,16 @@ ssh -L 3306:127.0.0.1:3306 root@server-public-ip
 
 ```bash
 cd /root/order-fun/deploy
+./start-services.sh
 docker compose restart app
 docker compose logs --tail=200 app
 docker compose down
 ```
+
+`start-services.sh` 用于服务器重启后恢复服务：它会启动 Docker（如尚未启动）并执行
+`docker compose up -d`，不会重建镜像、导入数据库或删除任何数据。首次部署完成后可执行
+`systemctl enable docker`，使 Docker 在系统开机时自动启动；本项目的长期运行容器使用
+`restart: unless-stopped`，通常会随 Docker 自动恢复。
 
 `docker compose down` 不会删除数据卷。只有明确要清空全部数据库、缓存和消息数据时才使用
 `docker compose down -v`，该操作不可恢复。

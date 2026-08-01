@@ -51,8 +51,10 @@ services:
     image: apache/rocketmq:4.9.6
     user: "0:0"
     restart: "no"
-    entrypoint: ["/bin/sh", "-c"]
-    command: mkdir -p /home/rocketmq/store && chown -R 3000:3000 /home/rocketmq/store
+    entrypoint:
+      - /bin/sh
+      - -c
+      - mkdir -p /home/rocketmq/store && chown -R 3000:3000 /home/rocketmq/store
     volumes:
       - broker-data:/home/rocketmq/store
 

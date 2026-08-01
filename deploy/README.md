@@ -58,6 +58,15 @@ ssh -L 6379:127.0.0.1:6379 root@server-public-ip
 随后在本机 Redis 客户端连接 `127.0.0.1:6379`，并使用 `.env` 内的 `REDIS_PASSWORD`。不要在
 云安全组开放 6379。
 
+MySQL 也只绑定服务器本机 `127.0.0.1:3306`。本地数据库客户端可使用：
+
+```bash
+ssh -L 3306:127.0.0.1:3306 root@server-public-ip
+```
+
+连接地址为 `127.0.0.1:3306`，数据库名为 `hycomment`，用户名为 `.env` 中的
+`MYSQL_APP_USER`，密码为 `MYSQL_APP_PASSWORD`。不要在云安全组开放 3306。
+
 ## 常用操作
 
 ```bash

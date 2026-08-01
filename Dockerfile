@@ -12,7 +12,10 @@ RUN mvn -B -DskipTests package
 FROM eclipse-temurin:8-jre
 
 WORKDIR /app
-RUN groupadd --system app && useradd --system --gid app --home-dir /app app
+RUN groupadd --system app \
+    && useradd --system --gid app --home-dir /app app \
+    && mkdir -p /app/logs/rocketmqlogs \
+    && chown -R app:app /app
 
 COPY --from=build /workspace/target/heyee-comments-*.jar /app/app.jar
 

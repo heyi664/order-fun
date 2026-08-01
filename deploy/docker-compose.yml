@@ -15,7 +15,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD}
     volumes:
       - mysql-data:/var/lib/mysql
-      - ../src/main/resources/db/heyee-comments.sql:/docker-entrypoint-initdb.d/01-heyee-comments.sql:ro
+      - ./mysql/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
       interval: 10s

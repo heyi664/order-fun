@@ -41,6 +41,21 @@ docker compose logs -f broker
 curl -i http://127.0.0.1/api/voucher/token-packs
 ```
 
+## 秒杀链路指标
+
+秒杀下单接口会记录以下 Actuator Timer：
+
+- `seckill.order.request.duration`：整个下单接口。
+- `seckill.voucher.query.duration`：券信息的 MySQL 查询。
+- `seckill.redis.lua.duration`：Redis Lua 库存与限购扣减。
+- `seckill.rocketmq.sync-send.duration`：等待 RocketMQ Broker ACK。
+
+指标不通过 Nginx 对公网暴露。登录服务器后从应用容器读取，例如：
+
+```bash
+docker compose exec app sh -c 'wget -qO- http://127.0.0.1:8081/actuator/metrics/seckill.rocketmq.sync-send.duration'
+```
+
 浏览器访问 `http://服务器公网IP/`。仅在云安全组开放 TCP 80（以及管理用 SSH 22）；不要公开
 MySQL 3306、Redis 6379、RocketMQ 9876/10911、Java 8081 和 Dashboard 8082。
 

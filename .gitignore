@@ -35,6 +35,13 @@ build/
 ### Local environment ###
 .env
 
+### Load-test credentials and results ###
+loadtest/k6/k6.env
+loadtest/k6/load-users.sql
+loadtest/k6/load-redis.txt
+loadtest/k6/seckill-summary*.json
+loadtest/k6/seckill-qps*.json
+
 ### Frontend nginx runtime files ###
 frontend/nginx-1.18.0/logs/*
 !frontend/nginx-1.18.0/logs/.gitkeep

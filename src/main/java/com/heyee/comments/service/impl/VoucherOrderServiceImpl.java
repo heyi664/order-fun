@@ -11,6 +11,8 @@ import com.heyee.comments.service.IVoucherOrderService;
 import com.heyee.comments.utils.RedisIdWorker;
 import com.heyee.comments.utils.RocketMqConstants;
 import com.heyee.comments.utils.UserHolder;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.redisson.api.RLock;
@@ -32,6 +34,11 @@ import java.util.concurrent.TimeUnit;
 public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, VoucherOrder>
         implements IVoucherOrderService {
 
+    private static final String METRIC_TOTAL = "seckill.order.request.duration";
+    private static final String METRIC_VOUCHER_QUERY = "seckill.voucher.query.duration";
+    private static final String METRIC_REDIS_LUA = "seckill.redis.lua.duration";
+    private static final String METRIC_ROCKETMQ_SEND = "seckill.rocketmq.sync-send.duration";
+
     private static final DefaultRedisScript<Long> SECKILL_SCRIPT;
     static {
         SECKILL_SCRIPT = new DefaultRedisScript<>();
@@ -45,6 +52,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource private StringRedisTemplate stringRedisTemplate;
     @Resource private RocketMQTemplate rocketMQTemplate;
     @Resource private VoucherMapper voucherMapper;
+    @Resource private MeterRegistry meterRegistry;
 
     @Override
     public Result seckillVoucher(Long voucherId) {
@@ -87,63 +95,91 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     @Override
     public Result seckillVoucher(Long voucherId, Integer quantity, String paymentRequestId) {
-        if (paymentRequestId == null || !paymentRequestId.matches("[A-Za-z0-9-]{16,64}")) {
-            return Result.fail("Invalid payment request");
-        }
-        if (quantity == null || quantity <= 0) return Result.fail("购买数量必须大于 0");
-        Voucher voucher = voucherMapper.selectById(voucherId);
-        if (voucher == null || voucher.getType() == null || voucher.getType() != 1
-                || voucher.getStatus() == null || voucher.getStatus() != 1) {
-            return Result.fail("Token 包不存在或已下架");
-        }
-        com.heyee.comments.entity.SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
-        LocalDateTime now = LocalDateTime.now();
-        if (seckillVoucher == null) return Result.fail("Token package activity does not exist");
-        if (seckillVoucher.getBeginTime() != null && now.isBefore(seckillVoucher.getBeginTime())) {
-            return Result.fail("Token package sale has not started");
-        }
-        if (seckillVoucher.getEndTime() != null && !now.isBefore(seckillVoucher.getEndTime())) {
-            return Result.fail("Token package sale has ended");
-        }
-        int perOrderLimit = voucher.getPerOrderLimit() == null ? 1 : voucher.getPerOrderLimit();
-        int perUserLimit = voucher.getPerUserLimit() == null ? 1 : voucher.getPerUserLimit();
-        if (quantity > perOrderLimit) return Result.fail("超过单次限购数量");
-
-        Long userId = UserHolder.getUser().getId();
-        String paymentKey = com.heyee.comments.utils.RedisConstants.SECKILL_PAYMENT_REQUEST_KEY
-                + userId + ":" + paymentRequestId;
-        Boolean firstConfirmation = stringRedisTemplate.opsForValue().setIfAbsent(
-                paymentKey, "PROCESSING", 30, TimeUnit.MINUTES);
-        if (!Boolean.TRUE.equals(firstConfirmation)) {
-            String previousResult = stringRedisTemplate.opsForValue().get(paymentKey);
-            if (previousResult != null && previousResult.startsWith("ORDER:")) {
-                return Result.ok(Long.valueOf(previousResult.substring("ORDER:".length())));
-            }
-            return Result.fail("Payment confirmation is already being processed");
-        }
-        long orderId = redisIdWorker.nextId("order");
-        Long result = stringRedisTemplate.execute(SECKILL_SCRIPT, Collections.emptyList(),
-                voucherId.toString(), userId.toString(), String.valueOf(orderId), String.valueOf(quantity),
-                String.valueOf(perOrderLimit), String.valueOf(perUserLimit));
-        if (result == null || result != 0) stringRedisTemplate.delete(paymentKey);
-        if (result == null) return Result.fail("秒杀服务暂时不可用");
-        if (result == 1) return Result.fail("库存不足");
-        if (result == 2) return Result.fail("超过每人累计限购数量");
-        if (result == 3) return Result.fail("超过单次限购数量");
-
-        VoucherOrder voucherOrder = new VoucherOrder();
-        voucherOrder.setId(orderId);
-        voucherOrder.setUserId(userId);
-        voucherOrder.setVoucherId(voucherId);
-        voucherOrder.setQuantity(quantity);
+        Timer.Sample totalSample = Timer.start(meterRegistry);
         try {
-            rocketMQTemplate.syncSend(RocketMqConstants.SECKILL_VOUCHER_ORDER_TOPIC, voucherOrder);
-        } catch (Exception e) {
-            log.error("秒杀订单消息投递失败，orderId={}", orderId, e);
-            throw new IllegalStateException("秒杀订单提交失败，请稍后重试", e);
+            if (paymentRequestId == null || !paymentRequestId.matches("[A-Za-z0-9-]{16,64}")) {
+                return Result.fail("Invalid payment request");
+            }
+            if (quantity == null || quantity <= 0) return Result.fail("购买数量必须大于 0");
+
+            Timer.Sample voucherQuerySample = Timer.start(meterRegistry);
+            Voucher voucher;
+            com.heyee.comments.entity.SeckillVoucher seckillVoucher;
+            try {
+                voucher = voucherMapper.selectById(voucherId);
+                seckillVoucher = seckillVoucherService.getById(voucherId);
+            } finally {
+                voucherQuerySample.stop(timer(METRIC_VOUCHER_QUERY));
+            }
+            if (voucher == null || voucher.getType() == null || voucher.getType() != 1
+                    || voucher.getStatus() == null || voucher.getStatus() != 1) {
+                return Result.fail("Token 包不存在或已下架");
+            }
+            LocalDateTime now = LocalDateTime.now();
+            if (seckillVoucher == null) return Result.fail("Token package activity does not exist");
+            if (seckillVoucher.getBeginTime() != null && now.isBefore(seckillVoucher.getBeginTime())) {
+                return Result.fail("Token package sale has not started");
+            }
+            if (seckillVoucher.getEndTime() != null && !now.isBefore(seckillVoucher.getEndTime())) {
+                return Result.fail("Token package sale has ended");
+            }
+            int perOrderLimit = voucher.getPerOrderLimit() == null ? 1 : voucher.getPerOrderLimit();
+            int perUserLimit = voucher.getPerUserLimit() == null ? 1 : voucher.getPerUserLimit();
+            if (quantity > perOrderLimit) return Result.fail("超过单次限购数量");
+
+            Long userId = UserHolder.getUser().getId();
+            String paymentKey = com.heyee.comments.utils.RedisConstants.SECKILL_PAYMENT_REQUEST_KEY
+                    + userId + ":" + paymentRequestId;
+            Boolean firstConfirmation = stringRedisTemplate.opsForValue().setIfAbsent(
+                    paymentKey, "PROCESSING", 30, TimeUnit.MINUTES);
+            if (!Boolean.TRUE.equals(firstConfirmation)) {
+                String previousResult = stringRedisTemplate.opsForValue().get(paymentKey);
+                if (previousResult != null && previousResult.startsWith("ORDER:")) {
+                    return Result.ok(Long.valueOf(previousResult.substring("ORDER:".length())));
+                }
+                return Result.fail("Payment confirmation is already being processed");
+            }
+            long orderId = redisIdWorker.nextId("order");
+            Timer.Sample redisLuaSample = Timer.start(meterRegistry);
+            Long result;
+            try {
+                result = stringRedisTemplate.execute(SECKILL_SCRIPT, Collections.emptyList(),
+                        voucherId.toString(), userId.toString(), String.valueOf(orderId), String.valueOf(quantity),
+                        String.valueOf(perOrderLimit), String.valueOf(perUserLimit));
+            } finally {
+                redisLuaSample.stop(timer(METRIC_REDIS_LUA));
+            }
+            if (result == null || result != 0) stringRedisTemplate.delete(paymentKey);
+            if (result == null) return Result.fail("秒杀服务暂时不可用");
+            if (result == 1) return Result.fail("库存不足");
+            if (result == 2) return Result.fail("超过每人累计限购数量");
+            if (result == 3) return Result.fail("超过单次限购数量");
+
+            VoucherOrder voucherOrder = new VoucherOrder();
+            voucherOrder.setId(orderId);
+            voucherOrder.setUserId(userId);
+            voucherOrder.setVoucherId(voucherId);
+            voucherOrder.setQuantity(quantity);
+            Timer.Sample rocketMqSample = Timer.start(meterRegistry);
+            try {
+                rocketMQTemplate.syncSend(RocketMqConstants.SECKILL_VOUCHER_ORDER_TOPIC, voucherOrder);
+            } catch (Exception e) {
+                log.error("秒杀订单消息投递失败，orderId={}", orderId, e);
+                throw new IllegalStateException("秒杀订单提交失败，请稍后重试", e);
+            } finally {
+                rocketMqSample.stop(timer(METRIC_ROCKETMQ_SEND));
+            }
+            stringRedisTemplate.opsForValue().set(paymentKey, "ORDER:" + orderId, 24, TimeUnit.HOURS);
+            return Result.ok(orderId);
+        } finally {
+            totalSample.stop(timer(METRIC_TOTAL));
         }
-        stringRedisTemplate.opsForValue().set(paymentKey, "ORDER:" + orderId, 24, TimeUnit.HOURS);
-        return Result.ok(orderId);
+    }
+
+    private Timer timer(String name) {
+        return Timer.builder(name)
+                .publishPercentiles(0.5, 0.95, 0.99)
+                .register(meterRegistry);
     }
 
     @Override

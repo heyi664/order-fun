@@ -41,6 +41,7 @@ loadtest/k6/load-users.sql
 loadtest/k6/load-redis.txt
 loadtest/k6/seckill-summary*.json
 loadtest/k6/seckill-qps*.json
+loadtest/k6/seckill-metrics*.json
 
 ### Frontend nginx runtime files ###
 frontend/nginx-1.18.0/logs/*

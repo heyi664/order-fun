@@ -18,6 +18,8 @@ public class RedisConstants {
     public static final Long LOCK_SHOP_TTL = 10L;
 
     public static final String SECKILL_STOCK_KEY = "seckill:stock:";
+    /** Immutable sale configuration for a token package, stored as a Redis hash. */
+    public static final String SECKILL_VOUCHER_KEY = "seckill:voucher:";
     public static final String SECKILL_USER_COUNT_KEY = "seckill:user-count:";
     public static final String SECKILL_PAYMENT_REQUEST_KEY = "seckill:payment:request:";
     public static final String BLOG_LIKED_KEY = "blog:liked:";

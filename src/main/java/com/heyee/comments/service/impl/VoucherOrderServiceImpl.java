@@ -8,6 +8,8 @@ import com.heyee.comments.mapper.VoucherMapper;
 import com.heyee.comments.mapper.VoucherOrderMapper;
 import com.heyee.comments.service.ISeckillVoucherService;
 import com.heyee.comments.service.IVoucherOrderService;
+import com.heyee.comments.service.cache.SeckillVoucherCacheService;
+import com.heyee.comments.service.cache.SeckillVoucherCacheService.Metadata;
 import com.heyee.comments.utils.RedisIdWorker;
 import com.heyee.comments.utils.RocketMqConstants;
 import com.heyee.comments.utils.UserHolder;
@@ -24,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +36,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         implements IVoucherOrderService {
 
     private static final String METRIC_TOTAL = "seckill.order.request.duration";
-    private static final String METRIC_VOUCHER_QUERY = "seckill.voucher.query.duration";
+    private static final String METRIC_VOUCHER_CACHE = "seckill.voucher.cache.duration";
+    private static final String METRIC_VOUCHER_DB_FALLBACK = "seckill.voucher.db-fallback.duration";
     private static final String METRIC_REDIS_LUA = "seckill.redis.lua.duration";
     private static final String METRIC_ROCKETMQ_SEND = "seckill.rocketmq.sync-send.duration";
 
@@ -53,6 +55,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Resource private RocketMQTemplate rocketMQTemplate;
     @Resource private VoucherMapper voucherMapper;
     @Resource private MeterRegistry meterRegistry;
+    @Resource private SeckillVoucherCacheService seckillVoucherCacheService;
 
     @Override
     public Result seckillVoucher(Long voucherId) {
@@ -62,21 +65,19 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     @Override
     public Result checkSeckillEligibility(Long voucherId, Integer quantity) {
         if (quantity == null || quantity <= 0) return Result.fail("Purchase quantity must be greater than zero");
-        Voucher voucher = voucherMapper.selectById(voucherId);
-        if (voucher == null || voucher.getType() == null || voucher.getType() != 1
-                || voucher.getStatus() == null || voucher.getStatus() != 1) {
+        Metadata voucher = getVoucherMetadata(voucherId);
+        if (voucher == null || voucher.getType() != 1 || voucher.getStatus() != 1) {
             return Result.fail("Token package is unavailable");
         }
-        com.heyee.comments.entity.SeckillVoucher seckillVoucher = seckillVoucherService.getById(voucherId);
-        LocalDateTime now = LocalDateTime.now();
-        if (seckillVoucher == null || (seckillVoucher.getBeginTime() != null && now.isBefore(seckillVoucher.getBeginTime()))) {
+        long now = System.currentTimeMillis();
+        if (now < voucher.getBeginAt()) {
             return Result.fail("Token package sale has not started");
         }
-        if (seckillVoucher.getEndTime() != null && !now.isBefore(seckillVoucher.getEndTime())) {
+        if (now >= voucher.getEndAt()) {
             return Result.fail("Token package sale has ended");
         }
-        int perOrderLimit = voucher.getPerOrderLimit() == null ? 1 : voucher.getPerOrderLimit();
-        int perUserLimit = voucher.getPerUserLimit() == null ? 1 : voucher.getPerUserLimit();
+        int perOrderLimit = voucher.getPerOrderLimit();
+        int perUserLimit = voucher.getPerUserLimit();
         if (quantity > perOrderLimit) return Result.fail("Purchase quantity exceeds the per-order limit");
         String stock = stringRedisTemplate.opsForValue().get(com.heyee.comments.utils.RedisConstants.SECKILL_STOCK_KEY + voucherId);
         if (stock == null || Long.parseLong(stock) < quantity) return Result.fail("Token package is sold out");
@@ -102,29 +103,19 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             }
             if (quantity == null || quantity <= 0) return Result.fail("购买数量必须大于 0");
 
-            Timer.Sample voucherQuerySample = Timer.start(meterRegistry);
-            Voucher voucher;
-            com.heyee.comments.entity.SeckillVoucher seckillVoucher;
-            try {
-                voucher = voucherMapper.selectById(voucherId);
-                seckillVoucher = seckillVoucherService.getById(voucherId);
-            } finally {
-                voucherQuerySample.stop(timer(METRIC_VOUCHER_QUERY));
-            }
-            if (voucher == null || voucher.getType() == null || voucher.getType() != 1
-                    || voucher.getStatus() == null || voucher.getStatus() != 1) {
+            Metadata voucher = getVoucherMetadata(voucherId);
+            if (voucher == null || voucher.getType() != 1 || voucher.getStatus() != 1) {
                 return Result.fail("Token 包不存在或已下架");
             }
-            LocalDateTime now = LocalDateTime.now();
-            if (seckillVoucher == null) return Result.fail("Token package activity does not exist");
-            if (seckillVoucher.getBeginTime() != null && now.isBefore(seckillVoucher.getBeginTime())) {
+            long now = System.currentTimeMillis();
+            if (now < voucher.getBeginAt()) {
                 return Result.fail("Token package sale has not started");
             }
-            if (seckillVoucher.getEndTime() != null && !now.isBefore(seckillVoucher.getEndTime())) {
+            if (now >= voucher.getEndAt()) {
                 return Result.fail("Token package sale has ended");
             }
-            int perOrderLimit = voucher.getPerOrderLimit() == null ? 1 : voucher.getPerOrderLimit();
-            int perUserLimit = voucher.getPerUserLimit() == null ? 1 : voucher.getPerUserLimit();
+            int perOrderLimit = voucher.getPerOrderLimit();
+            int perUserLimit = voucher.getPerUserLimit();
             if (quantity > perOrderLimit) return Result.fail("超过单次限购数量");
 
             Long userId = UserHolder.getUser().getId();
@@ -145,7 +136,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             try {
                 result = stringRedisTemplate.execute(SECKILL_SCRIPT, Collections.emptyList(),
                         voucherId.toString(), userId.toString(), String.valueOf(orderId), String.valueOf(quantity),
-                        String.valueOf(perOrderLimit), String.valueOf(perUserLimit));
+                        String.valueOf(perOrderLimit), String.valueOf(perUserLimit),
+                        String.valueOf(voucher.getEndAt() / 1000));
             } finally {
                 redisLuaSample.stop(timer(METRIC_REDIS_LUA));
             }
@@ -174,6 +166,37 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         } finally {
             totalSample.stop(timer(METRIC_TOTAL));
         }
+    }
+
+    /**
+     * Reads sale metadata from Redis on the normal path. For packages published
+     * before this cache was introduced, a one-time database fallback backfills
+     * metadata only; it never recreates the Redis stock key.
+     */
+    private Metadata getVoucherMetadata(Long voucherId) {
+        Timer.Sample cacheSample = Timer.start(meterRegistry);
+        Metadata metadata;
+        try {
+            metadata = seckillVoucherCacheService.get(voucherId);
+        } finally {
+            cacheSample.stop(timer(METRIC_VOUCHER_CACHE));
+        }
+        if (metadata != null) {
+            meterRegistry.counter("seckill.voucher.cache.hit").increment();
+            return metadata;
+        }
+
+        meterRegistry.counter("seckill.voucher.cache.miss").increment();
+        Timer.Sample fallbackSample = Timer.start(meterRegistry);
+        try {
+            metadata = seckillVoucherCacheService.loadMetadataFromDatabase(voucherId);
+        } finally {
+            fallbackSample.stop(timer(METRIC_VOUCHER_DB_FALLBACK));
+        }
+        if (metadata != null && metadata.getEndAt() > System.currentTimeMillis()) {
+            seckillVoucherCacheService.cacheMetadata(metadata);
+        }
+        return metadata;
     }
 
     private Timer timer(String name) {

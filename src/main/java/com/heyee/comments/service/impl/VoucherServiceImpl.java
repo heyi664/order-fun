@@ -8,10 +8,14 @@ import com.heyee.comments.entity.Voucher;
 import com.heyee.comments.mapper.VoucherMapper;
 import com.heyee.comments.service.ISeckillVoucherService;
 import com.heyee.comments.service.IVoucherService;
+import com.heyee.comments.service.cache.SeckillVoucherCacheService;
 import com.heyee.comments.service.cache.VoucherListCacheService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.Resource;
 import java.math.RoundingMode;
@@ -28,6 +32,7 @@ import static com.heyee.comments.utils.RedisConstants.SECKILL_STOCK_KEY;
  * @author 虎哥
  * @since 2021-12-22
  */
+@Slf4j
 @Service
 public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> implements IVoucherService {
 
@@ -37,6 +42,8 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
     private StringRedisTemplate stringRedisTemplate;
     @Resource
     private VoucherListCacheService voucherListCacheService;
+    @Resource
+    private SeckillVoucherCacheService seckillVoucherCacheService;
 
     @Override
     public Result queryVoucherOfShop(Long shopId) {
@@ -115,7 +122,17 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
         seckillVoucher.setEndTime(voucher.getEndTime());
         seckillVoucherService.save(seckillVoucher);
         // 保存秒杀库存到Redis中
-        stringRedisTemplate.opsForValue().set(SECKILL_STOCK_KEY + voucher.getId(), voucher.getStock().toString());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit() {
+                try {
+                    seckillVoucherCacheService.initializePublishedVoucher(voucher);
+                } catch (Exception ex) {
+                    log.error("Failed to initialize Redis cache for published token package, voucherId={}",
+                            voucher.getId(), ex);
+                }
+            }
+        });
         voucherListCacheService.evictVoucherList(voucher.getShopId());
     }
 }

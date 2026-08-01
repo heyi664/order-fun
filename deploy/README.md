@@ -46,7 +46,8 @@ curl -i http://127.0.0.1/api/voucher/token-packs
 秒杀下单接口会记录以下 Actuator Timer：
 
 - `seckill.order.request.duration`：整个下单接口。
-- `seckill.voucher.query.duration`：券信息的 MySQL 查询。
+- `seckill.voucher.cache.duration`：秒杀券配置的 Redis Hash 读取。
+- `seckill.voucher.db-fallback.duration`：仅在配置缓存未命中时的 MySQL 回退查询。
 - `seckill.redis.lua.duration`：Redis Lua 库存与限购扣减。
 - `seckill.rocketmq.sync-send.duration`：等待 RocketMQ Broker ACK。
 
@@ -55,6 +56,11 @@ curl -i http://127.0.0.1/api/voucher/token-packs
 ```bash
 docker compose exec app sh -c 'wget -qO- http://127.0.0.1:8081/actuator/metrics/seckill.rocketmq.sync-send.duration'
 ```
+
+发布 Token 包时，活动配置会写入 `seckill:voucher:{voucherId}`，库存写入
+`seckill:stock:{voucherId}`；两者均在活动结束时间自动过期。正常抢购不查询
+MySQL。若配置缓存意外丢失，应用只会回退查询并回填配置，绝不会根据 MySQL
+重建库存，以避免异步订单尚未落库时发生超卖。
 
 浏览器访问 `http://服务器公网IP/`。仅在云安全组开放 TCP 80（以及管理用 SSH 22）；不要公开
 MySQL 3306、Redis 6379、RocketMQ 9876/10911、Java 8081 和 Dashboard 8082。

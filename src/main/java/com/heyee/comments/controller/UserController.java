@@ -2,6 +2,7 @@ package com.heyee.comments.controller;
 
 
 import cn.hutool.core.bean.BeanUtil;
+import com.heyee.comments.dto.ImageCaptchaDTO;
 import com.heyee.comments.dto.LoginFormDTO;
 import com.heyee.comments.dto.Result;
 import com.heyee.comments.dto.UserDTO;
@@ -34,13 +35,22 @@ public class UserController {
     @Resource
     private IUserInfoService userInfoService;
 
+    /** Create a four-digit image captcha required before an email code can be sent. */
+    @GetMapping("captcha")
+    public Result imageCaptcha() {
+        ImageCaptchaDTO captcha = userService.createImageCaptcha();
+        return Result.ok(captcha);
+    }
+
     /**
      * 发送邮箱验证码
      */
     @PostMapping("code")
-    public Result sendCode(@RequestParam("email") String email, HttpSession session) {
+    public Result sendCode(@RequestParam("email") String email,
+                           @RequestParam("captchaId") String captchaId,
+                           @RequestParam("captchaCode") String captchaCode) {
         // 发送邮件验证码并保存验证码
-        return userService.sendCode(email, session);
+        return userService.sendCode(email, captchaId, captchaCode);
     }
 
     /**

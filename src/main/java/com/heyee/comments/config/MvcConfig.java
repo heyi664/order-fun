@@ -29,6 +29,7 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/mcp",
                         "/admin/auth/login",
                         "/admin/auth/register",
+                        "/user/captcha",
                         "/user/code",
                         "/user/login"
                 ).order(1);

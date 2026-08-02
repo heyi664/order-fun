@@ -1,0 +1,176 @@
+{
+    "metrics": {
+        "http_req_blocked": {
+            "min": 0,
+            "med": 0,
+            "max": 48.2859,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.8427033866666666
+        },
+        "http_req_tls_handshaking": {
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0
+        },
+        "seckill_rps_500_1_duration_ms": {
+            "p(90)": 44.01153000000001,
+            "p(95)": 53.382895,
+            "avg": 37.651209540000494,
+            "min": 28.1549,
+            "med": 34.4456,
+            "max": 350.35
+        },
+        "iteration_duration": {
+            "avg": 38.609058896667136,
+            "min": 28.1836,
+            "med": 34.54175,
+            "max": 350.4103,
+            "p(90)": 44.81775000000002,
+            "p(95)": 66.96356
+        },
+        "http_req_sending": {
+            "med": 0,
+            "max": 1.5138,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.003775813333333334,
+            "min": 0
+        },
+        "vus_max": {
+            "value": 800,
+            "min": 255,
+            "max": 800
+        },
+        "http_req_connecting": {
+            "avg": 0.8415181400000001,
+            "min": 0,
+            "med": 0,
+            "max": 48.2859,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "seckill_rps_500_1_accepted": {
+            "count": 30000,
+            "rate": 499.7217907203219
+        },
+        "checks": {
+            "passes": 60000,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_receiving": {
+            "max": 17.2682,
+            "p(90)": 0.5123100000000002,
+            "p(95)": 0.7922,
+            "avg": 0.1413183,
+            "min": 0,
+            "med": 0
+        },
+        "seckill_business_success": {
+            "passes": 30000,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "dropped_iterations": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 30000,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "seckill_transport_success": {
+            "passes": 30000,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "http_reqs": {
+            "count": 30000,
+            "rate": 499.7217907203219
+        },
+        "data_received": {
+            "count": 6390000,
+            "rate": 106440.74142342857
+        },
+        "seckill_order_accepted": {
+            "count": 30000,
+            "rate": 499.7217907203219
+        },
+        "iterations": {
+            "count": 30000,
+            "rate": 499.7217907203219
+        },
+        "http_req_waiting": {
+            "med": 34.34025,
+            "max": 350.198,
+            "p(90)": 43.811560000000014,
+            "p(95)": 52.977945,
+            "avg": 37.50611542666701,
+            "min": 28.1549
+        },
+        "vus": {
+            "value": 17,
+            "min": 0,
+            "max": 75
+        },
+        "http_req_duration": {
+            "avg": 37.651209540000494,
+            "min": 28.1549,
+            "med": 34.4456,
+            "max": 350.35,
+            "p(90)": 44.01153000000001,
+            "p(95)": 53.382895
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 34.4456,
+            "max": 350.35,
+            "p(90)": 44.01153000000001,
+            "p(95)": 53.382895,
+            "avg": 37.651209540000494,
+            "min": 28.1549
+        },
+        "data_sent": {
+            "count": 8925565,
+            "rate": 148676.64416635432
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "秒杀请求：HTTP 2xx": {
+                    "path": "::秒杀请求：HTTP 2xx",
+                    "id": "e58c8d54c3b27aa647777e3b39693c9e",
+                    "passes": 30000,
+                    "fails": 0,
+                    "name": "秒杀请求：HTTP 2xx"
+                },
+                "秒杀请求：响应为 JSON": {
+                    "name": "秒杀请求：响应为 JSON",
+                    "path": "::秒杀请求：响应为 JSON",
+                    "id": "5640ed5fa2b615353285377d73e7c5e9",
+                    "passes": 30000,
+                    "fails": 0
+                }
+            }
+    }
+}

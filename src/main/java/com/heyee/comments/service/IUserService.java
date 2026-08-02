@@ -1,6 +1,7 @@
 package com.heyee.comments.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.heyee.comments.dto.ImageCaptchaDTO;
 import com.heyee.comments.dto.LoginFormDTO;
 import com.heyee.comments.dto.Result;
 import com.heyee.comments.entity.User;
@@ -17,7 +18,9 @@ import javax.servlet.http.HttpSession;
  */
 public interface IUserService extends IService<User> {
 
-    Result sendCode(String email, HttpSession session);
+    ImageCaptchaDTO createImageCaptcha();
+
+    Result sendCode(String email, String captchaId, String captchaCode);
 
     Result login(LoginFormDTO loginForm, HttpSession session);
 

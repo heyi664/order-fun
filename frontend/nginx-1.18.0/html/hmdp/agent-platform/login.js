@@ -3,7 +3,7 @@
   const $ = selector => document.querySelector(selector);
   const form = $('#loginForm'); const message = $('#formMessage');
   let mode = new URLSearchParams(location.search).get('mode') === 'admin' ? 'admin' : 'user';
-  let adminAction = 'login'; let timer = null;
+  let adminAction = 'login'; let timer = null; let captchaId = '';
 
   function setMessage(text = '', type = '') { message.textContent = text; message.className = `form-message ${type}`; }
   async function request(path, options = {}) {
@@ -14,6 +14,18 @@
     if (!response.ok || (result && result.success === false)) throw new Error((result && result.errorMsg) || `请求失败 (${response.status})`);
     return result && Object.prototype.hasOwnProperty.call(result, 'data') ? result.data : result;
   }
+  async function refreshImageCaptcha() {
+    const button = $('#refreshCaptcha'); const image = $('#captchaImage');
+    if (!button || !image) return;
+    button.disabled = true; image.alt = '正在加载图形验证码';
+    try {
+      const captcha = await request('/user/captcha');
+      captchaId = captcha.captchaId; image.src = captcha.image; image.alt = '四位图形验证码，点击图片可刷新';
+      $('#imageCaptcha').value = '';
+    } catch (error) {
+      captchaId = ''; image.removeAttribute('src'); image.alt = '图形验证码加载失败'; setMessage(error.message, 'error');
+    } finally { button.disabled = false; }
+  }
   function setMode(nextMode) {
     mode = nextMode; adminAction = 'login'; form.reset(); setMessage('');
     document.querySelectorAll('[data-mode]').forEach(button => button.classList.toggle('active', button.dataset.mode === mode));
@@ -23,6 +35,7 @@
     $('#loginButton').innerHTML = mode === 'user' ? '登录并进入平台<span>→</span>' : '管理员登录<span>→</span>';
     $('#adminAction').textContent = '没有管理员账号？使用校验码注册';
     $('#registrationCodeRow').hidden = true;
+    if (mode === 'user') refreshImageCaptcha();
   }
   function validEmail() { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('#email').value.trim()); }
   function userReturnTarget() {
@@ -36,10 +49,13 @@
   }
   $('#sendCode').addEventListener('click', async () => {
     if (!validEmail()) { setMessage('请输入有效的邮箱地址。', 'error'); return; }
+    const captchaCode = $('#imageCaptcha').value.trim();
+    if (!captchaId || !/^\d{4}$/.test(captchaCode)) { setMessage('请输入图片中的 4 位数字验证码。', 'error'); return; }
     const button = $('#sendCode'); button.disabled = true; button.textContent = '发送中…';
-    try { await request(`/user/code?email=${encodeURIComponent($('#email').value.trim().toLowerCase())}`, { method: 'POST' }); setMessage('验证码已发送，请查看邮箱。', 'success'); startCountdown(); }
-    catch (error) { setMessage(error.message, 'error'); button.disabled = false; button.textContent = '发送验证码'; }
+    try { await request(`/user/code?email=${encodeURIComponent($('#email').value.trim().toLowerCase())}&captchaId=${encodeURIComponent(captchaId)}&captchaCode=${encodeURIComponent(captchaCode)}`, { method: 'POST' }); setMessage('验证码已发送，请查看邮箱。', 'success'); startCountdown(); }
+    catch (error) { await refreshImageCaptcha(); setMessage(error.message, 'error'); button.disabled = false; button.textContent = '发送验证码'; }
   });
+  $('#refreshCaptcha').addEventListener('click', refreshImageCaptcha);
   $('#adminAction').addEventListener('click', () => {
     adminAction = adminAction === 'login' ? 'register' : 'login'; setMessage('');
     const registering = adminAction === 'register'; $('#registrationCodeRow').hidden = !registering;

@@ -1,0 +1,176 @@
+{
+    "metrics": {
+        "http_req_receiving": {
+            "med": 0,
+            "max": 209.4092,
+            "p(90)": 0.5257800000000004,
+            "p(95)": 1.0356,
+            "avg": 0.26800748609694297,
+            "min": 0
+        },
+        "http_req_duration": {
+            "avg": 187.84931142836155,
+            "min": 28.7818,
+            "med": 40.3515,
+            "max": 3117.4441,
+            "p(90)": 178.14162000000013,
+            "p(95)": 1473.69742
+        },
+        "http_req_blocked": {
+            "avg": 0.47705109910326715,
+            "min": 0,
+            "med": 0,
+            "max": 51.3564,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_reqs": {
+            "count": 95123,
+            "rate": 792.4537634619596
+        },
+        "iteration_duration": {
+            "p(90)": 178.15018,
+            "p(95)": 1478.6673999999957,
+            "avg": 188.4174891109386,
+            "min": 28.7818,
+            "med": 40.4279,
+            "max": 3117.4441
+        },
+        "seckill_transport_success": {
+            "fails": 0,
+            "passes": 95123,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "http_req_connecting": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.4754546092953338,
+            "min": 0,
+            "med": 0,
+            "max": 51.3564
+        },
+        "seckill_rps_800_1_accepted": {
+            "count": 95123,
+            "rate": 792.4537634619596
+        },
+        "http_req_tls_handshaking": {
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0
+        },
+        "http_req_waiting": {
+            "min": 28.7818,
+            "med": 40.2317,
+            "max": 3115.753,
+            "p(90)": 177.70724000000004,
+            "p(95)": 1472.8227499999987,
+            "avg": 187.5786158878496
+        },
+        "dropped_iterations": {
+            "count": 877,
+            "rate": 7.306139950970202,
+            "thresholds": {
+                "count==0": true
+            }
+        },
+        "http_req_duration{expected_response:true}": {
+            "med": 40.3515,
+            "max": 3117.4441,
+            "p(90)": 178.14162000000013,
+            "p(95)": 1473.69742,
+            "avg": 187.84931142836155,
+            "min": 28.7818
+        },
+        "seckill_rps_800_1_duration_ms": {
+            "max": 3117.4441,
+            "p(90)": 178.14162000000013,
+            "p(95)": 1473.69742,
+            "avg": 187.84931142836155,
+            "min": 28.7818,
+            "med": 40.3515
+        },
+        "iterations": {
+            "rate": 792.4537634619596,
+            "count": 95123
+        },
+        "checks": {
+            "passes": 190246,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 95123,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "vus_max": {
+            "value": 1454,
+            "min": 126,
+            "max": 1454
+        },
+        "http_req_sending": {
+            "med": 0,
+            "max": 4.6246,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.0026880544137590275,
+            "min": 0
+        },
+        "data_received": {
+            "count": 20261199,
+            "rate": 168792.65161739738
+        },
+        "seckill_business_success": {
+            "passes": 95123,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "seckill_order_accepted": {
+            "count": 95123,
+            "rate": 792.4537634619596
+        },
+        "data_sent": {
+            "count": 28325107,
+            "rate": 235971.7170675094
+        },
+        "vus": {
+            "min": 0,
+            "max": 1446,
+            "value": 28
+        }
+    },
+    "root_group": {
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "秒杀请求：HTTP 2xx": {
+                    "name": "秒杀请求：HTTP 2xx",
+                    "path": "::秒杀请求：HTTP 2xx",
+                    "id": "e58c8d54c3b27aa647777e3b39693c9e",
+                    "passes": 95123,
+                    "fails": 0
+                },
+                "秒杀请求：响应为 JSON": {
+                    "id": "5640ed5fa2b615353285377d73e7c5e9",
+                    "passes": 95123,
+                    "fails": 0,
+                    "name": "秒杀请求：响应为 JSON",
+                    "path": "::秒杀请求：响应为 JSON"
+                }
+            },
+        "name": ""
+    }
+}

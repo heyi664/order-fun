@@ -1,0 +1,176 @@
+{
+    "metrics": {
+        "iteration_duration": {
+            "p(95)": 76.3624,
+            "avg": 40.786555377252874,
+            "min": 28.8701,
+            "med": 35.6412,
+            "max": 181.8956,
+            "p(90)": 57.8072
+        },
+        "http_req_duration": {
+            "max": 181.773,
+            "p(90)": 48.6027,
+            "p(95)": 72.6148,
+            "avg": 39.81576288183617,
+            "min": 28.7384,
+            "med": 35.4664
+        },
+        "http_req_tls_handshaking": {
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0
+        },
+        "http_req_sending": {
+            "min": 0,
+            "med": 0,
+            "max": 1.8287,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.002960850932120666
+        },
+        "checks": {
+            "passes": 84002,
+            "fails": 0,
+            "value": 1
+        },
+        "vus": {
+            "value": 26,
+            "min": 0,
+            "max": 78
+        },
+        "seckill_rps_700_1_accepted": {
+            "count": 42001,
+            "rate": 699.6086840325007
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 42001,
+            "thresholds": {
+                "rate<0.01": false
+            },
+            "value": 0
+        },
+        "seckill_transport_success": {
+            "passes": 42001,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "data_received": {
+            "rate": 149016.64969892264,
+            "count": 8946213
+        },
+        "dropped_iterations": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "seckill_rps_700_1_duration_ms": {
+            "min": 28.7384,
+            "med": 35.4664,
+            "max": 181.773,
+            "p(90)": 48.6027,
+            "p(95)": 72.6148,
+            "avg": 39.81576288183617
+        },
+        "seckill_business_success": {
+            "passes": 42001,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.99": false
+            },
+            "value": 1
+        },
+        "http_reqs": {
+            "count": 42001,
+            "rate": 699.6086840325007
+        },
+        "http_req_duration{expected_response:true}": {
+            "max": 181.773,
+            "p(90)": 48.6027,
+            "p(95)": 72.6148,
+            "avg": 39.81576288183617,
+            "min": 28.7384,
+            "med": 35.4664
+        },
+        "iterations": {
+            "count": 42001,
+            "rate": 699.6086840325007
+        },
+        "vus_max": {
+            "value": 1200,
+            "min": 256,
+            "max": 1200
+        },
+        "http_req_receiving": {
+            "avg": 0.11223029927858902,
+            "min": 0,
+            "med": 0,
+            "max": 22.8018,
+            "p(90)": 0.5077,
+            "p(95)": 0.703
+        },
+        "data_sent": {
+            "count": 12500514,
+            "rate": 208220.47449512754
+        },
+        "http_req_blocked": {
+            "avg": 0.8664021594723946,
+            "min": 0,
+            "med": 0,
+            "max": 40.5991,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_connecting": {
+            "p(95)": 0,
+            "avg": 0.8654029380252859,
+            "min": 0,
+            "med": 0,
+            "max": 40.5991,
+            "p(90)": 0
+        },
+        "http_req_waiting": {
+            "avg": 39.7005717316255,
+            "min": 28.7384,
+            "med": 35.3104,
+            "max": 181.2689,
+            "p(90)": 48.426,
+            "p(95)": 72.4874
+        },
+        "seckill_order_accepted": {
+            "count": 42001,
+            "rate": 699.6086840325007
+        }
+    },
+    "root_group": {
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "秒杀请求：HTTP 2xx": {
+                    "fails": 0,
+                    "name": "秒杀请求：HTTP 2xx",
+                    "path": "::秒杀请求：HTTP 2xx",
+                    "id": "e58c8d54c3b27aa647777e3b39693c9e",
+                    "passes": 42001
+                },
+                "秒杀请求：响应为 JSON": {
+                    "name": "秒杀请求：响应为 JSON",
+                    "path": "::秒杀请求：响应为 JSON",
+                    "id": "5640ed5fa2b615353285377d73e7c5e9",
+                    "passes": 42001,
+                    "fails": 0
+                }
+            },
+        "name": "",
+        "path": ""
+    }
+}

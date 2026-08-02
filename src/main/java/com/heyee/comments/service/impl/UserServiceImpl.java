@@ -6,11 +6,13 @@ import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.heyee.comments.dto.LoginFormDTO;
+import com.heyee.comments.dto.ImageCaptchaDTO;
 import com.heyee.comments.dto.Result;
 import com.heyee.comments.dto.UserDTO;
 import com.heyee.comments.entity.User;
 import com.heyee.comments.mapper.UserMapper;
 import com.heyee.comments.service.IUserService;
+import com.heyee.comments.service.captcha.LoginCaptchaService;
 import com.heyee.comments.utils.RegexUtils;
 import com.heyee.comments.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
@@ -51,11 +53,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     @Resource
     private JavaMailSender mailSender;
 
+    @Resource
+    private LoginCaptchaService loginCaptchaService;
+
     @Value("${heyee.mail.from:}")
     private String mailFrom;
 
     @Override
-    public Result sendCode(String email, HttpSession session) {
+    public ImageCaptchaDTO createImageCaptcha() {
+        return loginCaptchaService.create();
+    }
+
+    @Override
+    public Result sendCode(String email, String captchaId, String captchaCode) {
+        if (!loginCaptchaService.verifyAndConsume(captchaId, captchaCode)) {
+            return Result.fail("图形验证码错误或已过期，请刷新后重试");
+        }
         email = email == null ? null : email.trim().toLowerCase();
         // 1.校验邮箱
         if (RegexUtils.isEmailInvalid(email)) {

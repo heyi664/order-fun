@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HYEEE Agent Hub - 项目架构示意图</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" integrity="sha384-ZZ1pncU3bQe8y31yfZdMFdSpttDoPmOZg2wguVK9almUodir1PghgT0eY7Mrty8H" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js" integrity="sha384-en/ztfPSRkGfME4KIm05joYXynqzUgbsG5nMrj/xEFAHXkeZfO3yMK8QQ+mP7p1/" crossorigin="anonymous"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #020617; color: #f8fafc; font-family: 'JetBrains Mono', monospace; padding: 32px; }
+    .container { max-width: 1320px; margin: 0 auto; }
+    .header-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .pulse-dot { width: 12px; height: 12px; border-radius: 50%; background: #22d3ee; animation: pulse 2s infinite; }
+    @keyframes pulse { 50% { opacity: .45; } }
+    h1 { font-size: 24px; letter-spacing: -.5px; }
+    .subtitle { color: #94a3b8; font-size: 13px; margin-left: 24px; }
+    .toolbar { display: flex; gap: 8px; margin-left: auto; align-items: center; }
+    .toolbar-actions { display: none; gap: 8px; }
+    .toolbar.expanded .toolbar-actions { display: flex; }
+    .toolbar button { background: rgba(30,41,59,.8); border: 1px solid #334155; border-radius: 6px; color: #cbd5e1; cursor: pointer; font: inherit; font-size: 11px; padding: 7px 10px; }
+    .toolbar button:hover { color: #fff; border-color: #64748b; }
+    .toolbar-toggle { font-size: 18px !important; padding: 3px 8px !important; }
+    .diagram-container { background: rgba(15,23,42,.55); border: 1px solid #1e293b; border-radius: 16px; margin-top: 26px; overflow-x: auto; padding: 18px; }
+    svg { display: block; min-width: 1120px; width: 100%; }
+    .cards { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 20px; }
+    .card { background: rgba(15,23,42,.55); border: 1px solid #1e293b; border-radius: 12px; padding: 18px; }
+    .card h3 { font-size: 13px; margin-bottom: 10px; }
+    .card ul { color: #94a3b8; font-size: 11px; line-height: 1.7; list-style: none; }
+    .card li::before { color: #22d3ee; content: '› '; }
+    .footer { color: #475569; font-size: 10px; margin: 18px 0 0; text-align: center; }
+    @media (max-width: 760px) { body { padding: 16px; } .cards { grid-template-columns: 1fr; } }
+    @media print { body { padding: 16px; } .toolbar { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="container" id="report-container">
+    <header>
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>HYEEE Agent Hub · 项目架构</h1>
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <button onclick="copyAsImage(this)">复制 PNG</button>
+            <button onclick="downloadPNG(this)">下载 PNG</button>
+            <button onclick="downloadPDF(this)">下载 PDF</button>
+          </div>
+          <button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')" title="导出">⌄</button>
+        </div>
+      </div>
+      <p class="subtitle">前端网关、Spring Boot 业务服务、缓存/数据库、RocketMQ 异步订单与 Python Agent 调用关系</p>
+    </header>
+
+    <main class="diagram-container">
+      <svg viewBox="0 0 1260 770" role="img" aria-label="HYEEE Agent Hub architecture diagram">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#64748b"/></marker>
+          <marker id="arrow-cyan" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#22d3ee"/></marker>
+          <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#fb923c"/></marker>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width=".5"/></pattern>
+        </defs>
+        <rect width="1260" height="770" fill="url(#grid)"/>
+
+        <!-- connections: rendered first so boxes mask them -->
+        <line x1="160" y1="380" x2="246" y2="380" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+        <text x="202" y="369" fill="#67e8f9" font-size="9" text-anchor="middle">HTTP :80</text>
+        <line x1="410" y1="380" x2="478" y2="380" stroke="#22d3ee" stroke-width="2" marker-end="url(#arrow-cyan)"/>
+        <text x="444" y="369" fill="#67e8f9" font-size="9" text-anchor="middle">/api/*</text>
+
+        <line x1="674" y1="312" x2="744" y2="192" stroke="#34d399" stroke-width="1.7" marker-end="url(#arrow)"/>
+        <text x="719" y="247" fill="#94a3b8" font-size="8" text-anchor="middle">读缓存 / Session / Lua</text>
+        <line x1="674" y1="365" x2="744" y2="365" stroke="#a78bfa" stroke-width="1.7" marker-end="url(#arrow)"/>
+        <text x="708" y="353" fill="#c4b5fd" font-size="8" text-anchor="middle">JDBC</text>
+        <line x1="674" y1="428" x2="744" y2="512" stroke="#fb923c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+        <text x="706" y="466" fill="#fdba74" font-size="8" text-anchor="middle">syncSend</text>
+        <line x1="874" y1="557" x2="1014" y2="557" stroke="#fb923c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+        <text x="944" y="546" fill="#fdba74" font-size="8" text-anchor="middle">消费订单消息</text>
+        <path d="M 1086 504 L 1086 428 Q 1086 410 1068 410 L 886 410" fill="none" stroke="#a78bfa" stroke-width="1.7" marker-end="url(#arrow)"/>
+        <text x="994" y="399" fill="#c4b5fd" font-size="8" text-anchor="middle">事务：扣库存 + 写订单</text>
+
+        <line x1="674" y1="474" x2="1014" y2="474" stroke="#94a3b8" stroke-width="1.7" marker-end="url(#arrow)"/>
+        <text x="842" y="463" fill="#cbd5e1" font-size="8" text-anchor="middle">HTTP /v1/agent/chat（流式响应）</text>
+        <path d="M 1014 448 L 946 448 Q 928 448 928 430 L 674 430" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+
+        <!-- deployment boundary -->
+        <rect x="214" y="66" width="1000" height="596" rx="14" fill="rgba(251,146,60,.035)" stroke="#fbbf24" stroke-width="1.2" stroke-dasharray="8,4"/>
+        <text x="232" y="91" fill="#fbbf24" font-size="11" font-weight="700">Linux Server / Docker Compose Network</text>
+        <text x="232" y="107" fill="#94a3b8" font-size="8">公网仅暴露 Nginx :80；MySQL、Redis 与 RocketMQ Dashboard 使用内网或 localhost 端口</text>
+
+        <!-- client -->
+        <rect x="34" y="326" width="126" height="108" rx="8" fill="#0f172a"/>
+        <rect x="34" y="326" width="126" height="108" rx="8" fill="rgba(30,41,59,.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="97" y="355" fill="white" font-size="13" font-weight="700" text-anchor="middle">浏览器用户</text>
+        <text x="97" y="376" fill="#94a3b8" font-size="9" text-anchor="middle">Agent Hub 前端</text>
+        <text x="97" y="394" fill="#94a3b8" font-size="8" text-anchor="middle">社区 · Token 包 · AI 对话</text>
+        <text x="97" y="416" fill="#cbd5e1" font-size="8" text-anchor="middle">登录令牌 Authorization</text>
+
+        <!-- nginx -->
+        <rect x="246" y="320" width="164" height="120" rx="8" fill="#0f172a"/>
+        <rect x="246" y="320" width="164" height="120" rx="8" fill="rgba(8,51,68,.4)" stroke="#22d3ee" stroke-width="1.5"/>
+        <text x="328" y="349" fill="white" font-size="13" font-weight="700" text-anchor="middle">Nginx</text>
+        <text x="328" y="370" fill="#67e8f9" font-size="9" text-anchor="middle">静态前端 + 反向代理</text>
+        <text x="328" y="390" fill="#94a3b8" font-size="8" text-anchor="middle">/ → agent-platform</text>
+        <text x="328" y="407" fill="#94a3b8" font-size="8" text-anchor="middle">/api → app:8081</text>
+        <text x="328" y="424" fill="#94a3b8" font-size="8" text-anchor="middle">/imgs → 图片资源</text>
+
+        <!-- Java app -->
+        <rect x="478" y="250" width="196" height="252" rx="10" fill="#0f172a"/>
+        <rect x="478" y="250" width="196" height="252" rx="10" fill="rgba(6,78,59,.4)" stroke="#34d399" stroke-width="1.6"/>
+        <text x="576" y="280" fill="white" font-size="13" font-weight="700" text-anchor="middle">Spring Boot App</text>
+        <text x="576" y="299" fill="#6ee7b7" font-size="9" text-anchor="middle">app :8081 · MyBatis-Plus</text>
+        <line x1="494" y1="313" x2="658" y2="313" stroke="#34d399" opacity=".45"/>
+        <text x="576" y="335" fill="#cbd5e1" font-size="9" text-anchor="middle">用户 / 帖子 / 评论 / 收藏</text>
+        <text x="576" y="357" fill="#cbd5e1" font-size="9" text-anchor="middle">邮箱登录与管理员鉴权</text>
+        <text x="576" y="389" fill="#fef3c7" font-size="9" font-weight="700" text-anchor="middle">Token 包秒杀入口</text>
+        <text x="576" y="407" fill="#94a3b8" font-size="8" text-anchor="middle">缓存券配置 · Redis Lua 校验</text>
+        <text x="576" y="424" fill="#94a3b8" font-size="8" text-anchor="middle">生成订单 → 生产 MQ 消息</text>
+        <text x="576" y="461" fill="#cbd5e1" font-size="9" text-anchor="middle">Agent HTTP Client</text>
+        <text x="576" y="479" fill="#94a3b8" font-size="8" text-anchor="middle">转发 AI 对话 / 流式响应</text>
+
+        <!-- redis -->
+        <rect x="744" y="126" width="172" height="132" rx="8" fill="#0f172a"/>
+        <rect x="744" y="126" width="172" height="132" rx="8" fill="rgba(76,29,149,.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="830" y="156" fill="white" font-size="13" font-weight="700" text-anchor="middle">Redis</text>
+        <text x="830" y="176" fill="#c4b5fd" font-size="9" text-anchor="middle">缓存 / 分布式协调</text>
+        <text x="830" y="198" fill="#94a3b8" font-size="8" text-anchor="middle">login:token:* 会话</text>
+        <text x="830" y="215" fill="#94a3b8" font-size="8" text-anchor="middle">seckill:voucher / stock</text>
+        <text x="830" y="232" fill="#94a3b8" font-size="8" text-anchor="middle">Lua 库存与限购 · Redisson 锁</text>
+
+        <!-- mysql -->
+        <rect x="744" y="303" width="172" height="124" rx="8" fill="#0f172a"/>
+        <rect x="744" y="303" width="172" height="124" rx="8" fill="rgba(76,29,149,.4)" stroke="#a78bfa" stroke-width="1.5"/>
+        <text x="830" y="333" fill="white" font-size="13" font-weight="700" text-anchor="middle">MySQL 8.0</text>
+        <text x="830" y="353" fill="#c4b5fd" font-size="9" text-anchor="middle">持久化数据源</text>
+        <text x="830" y="375" fill="#94a3b8" font-size="8" text-anchor="middle">tb_user / tb_blog / tb_voucher</text>
+        <text x="830" y="392" fill="#94a3b8" font-size="8" text-anchor="middle">tb_seckill_voucher</text>
+        <text x="830" y="409" fill="#94a3b8" font-size="8" text-anchor="middle">tb_voucher_order / Token 流水</text>
+
+        <!-- RocketMQ -->
+        <rect x="744" y="497" width="172" height="120" rx="8" fill="#0f172a"/>
+        <rect x="744" y="497" width="172" height="120" rx="8" fill="rgba(251,146,60,.3)" stroke="#fb923c" stroke-width="1.5"/>
+        <text x="830" y="527" fill="white" font-size="13" font-weight="700" text-anchor="middle">RocketMQ</text>
+        <text x="830" y="547" fill="#fdba74" font-size="9" text-anchor="middle">NameServer + Broker</text>
+        <text x="830" y="569" fill="#94a3b8" font-size="8" text-anchor="middle">Topic: seckill-voucher-order</text>
+        <text x="830" y="586" fill="#94a3b8" font-size="8" text-anchor="middle">4 queues · 异步削峰</text>
+        <text x="830" y="603" fill="#94a3b8" font-size="8" text-anchor="middle">Consumer Group 消费确认</text>
+
+        <!-- consumer -->
+        <rect x="1014" y="504" width="164" height="106" rx="8" fill="#0f172a"/>
+        <rect x="1014" y="504" width="164" height="106" rx="8" fill="rgba(6,78,59,.4)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="1096" y="533" fill="white" font-size="12" font-weight="700" text-anchor="middle">订单消费者</text>
+        <text x="1096" y="552" fill="#6ee7b7" font-size="8" text-anchor="middle">SeckillVoucherConsumer</text>
+        <text x="1096" y="571" fill="#94a3b8" font-size="8" text-anchor="middle">幂等校验 · 限购校验</text>
+        <text x="1096" y="588" fill="#94a3b8" font-size="8" text-anchor="middle">MySQL 扣库存 + 写订单</text>
+
+        <!-- agent -->
+        <rect x="1014" y="278" width="164" height="118" rx="8" fill="#0f172a"/>
+        <rect x="1014" y="278" width="164" height="118" rx="8" fill="rgba(30,41,59,.5)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="1096" y="308" fill="white" font-size="12" font-weight="700" text-anchor="middle">Python RAG Agent</text>
+        <text x="1096" y="328" fill="#cbd5e1" font-size="9" text-anchor="middle">独立 FastAPI 服务</text>
+        <text x="1096" y="350" fill="#94a3b8" font-size="8" text-anchor="middle">/v1/agent/chat</text>
+        <text x="1096" y="367" fill="#94a3b8" font-size="8" text-anchor="middle">检索增强 · LLM · SSE 流式返回</text>
+        <text x="1096" y="384" fill="#94a3b8" font-size="8" text-anchor="middle">由 AGENT_SERVICE_URL 配置</text>
+
+        <!-- numbered paths -->
+        <g font-family="JetBrains Mono, monospace">
+          <circle cx="191" cy="356" r="10" fill="#083344" stroke="#22d3ee"/><text x="191" y="359" fill="#fff" font-size="9" text-anchor="middle">1</text>
+          <circle cx="443" cy="356" r="10" fill="#083344" stroke="#22d3ee"/><text x="443" y="359" fill="#fff" font-size="9" text-anchor="middle">2</text>
+          <circle cx="699" cy="283" r="10" fill="#064e3b" stroke="#34d399"/><text x="699" y="286" fill="#fff" font-size="9" text-anchor="middle">3</text>
+          <circle cx="704" cy="488" r="10" fill="#7c2d12" stroke="#fb923c"/><text x="704" y="491" fill="#fff" font-size="9" text-anchor="middle">4</text>
+          <circle cx="969" cy="527" r="10" fill="#7c2d12" stroke="#fb923c"/><text x="969" y="530" fill="#fff" font-size="9" text-anchor="middle">5</text>
+          <circle cx="964" cy="448" r="10" fill="#1e293b" stroke="#94a3b8"/><text x="964" y="451" fill="#fff" font-size="9" text-anchor="middle">6</text>
+        </g>
+
+        <!-- legend, outside deployment boundary -->
+        <g transform="translate(36,500)">
+          <text x="0" y="0" fill="white" font-size="11" font-weight="700">调用关系</text>
+          <text x="0" y="25" fill="#94a3b8" font-size="9">1 用户访问前端</text>
+          <text x="0" y="42" fill="#94a3b8" font-size="9">2 Nginx 转发 API</text>
+          <text x="0" y="59" fill="#94a3b8" font-size="9">3 Java 调 Redis / MySQL</text>
+          <text x="0" y="76" fill="#94a3b8" font-size="9">4 秒杀消息生产</text>
+          <text x="0" y="93" fill="#94a3b8" font-size="9">5 消费者异步落库</text>
+          <text x="0" y="110" fill="#94a3b8" font-size="9">6 Java 调 Python Agent</text>
+        </g>
+        <g transform="translate(36,654)">
+          <text x="0" y="0" fill="white" font-size="10" font-weight="700">图例</text>
+          <rect x="0" y="13" width="14" height="9" rx="2" fill="rgba(8,51,68,.4)" stroke="#22d3ee"/><text x="21" y="21" fill="#94a3b8" font-size="8">前端 / 网关</text>
+          <rect x="0" y="31" width="14" height="9" rx="2" fill="rgba(6,78,59,.4)" stroke="#34d399"/><text x="21" y="39" fill="#94a3b8" font-size="8">Java 服务</text>
+          <rect x="0" y="49" width="14" height="9" rx="2" fill="rgba(76,29,149,.4)" stroke="#a78bfa"/><text x="21" y="57" fill="#94a3b8" font-size="8">数据存储</text>
+          <rect x="0" y="67" width="14" height="9" rx="2" fill="rgba(251,146,60,.3)" stroke="#fb923c"/><text x="21" y="75" fill="#94a3b8" font-size="8">消息队列</text>
+        </g>
+      </svg>
+    </main>
+
+    <section class="cards">
+      <article class="card"><h3>请求入口</h3><ul><li>Nginx 提供静态页面并将 <code>/api</code> 代理到 Java。</li><li>登录会话由 Redis 中的 <code>login:token:*</code> 校验。</li><li>社区、账号、Token 包查询均同步返回。</li></ul></article>
+      <article class="card"><h3>Token 包秒杀链路</h3><ul><li>入口从 Redis 获取券配置，Lua 原子扣 Redis 库存并校验限购。</li><li>Java 同步等待 Broker 接收确认，再向客户端返回下单成功。</li><li>Consumer 异步完成 MySQL 最终库存扣减与订单写入。</li></ul></article>
+      <article class="card"><h3>AI 对话链路</h3><ul><li>浏览器请求先到 Java，避免直接暴露 Agent 服务。</li><li>Java 通过 <code>AGENT_SERVICE_URL</code> 调 Python RAG Agent。</li><li>Agent 结果由 Java 转发至前端，支持流式响应。</li></ul></article>
+    </section>
+    <p class="footer">HYEEE Agent Hub · 架构依据当前 Docker Compose 与 Spring Boot 配置绘制</p>
+  </div>
+  <script>
+    async function capture() {
+      const el = document.getElementById('report-container'); const r = el.getBoundingClientRect(); const pad = 32;
+      return html2canvas(document.body, { backgroundColor: '#020617', scale: 2, useCORS: true, ignoreElements: e => e.classList && e.classList.contains('toolbar'), x: r.left + scrollX - pad, y: r.top + scrollY - pad, width: r.width + pad * 2, height: r.height + pad * 2 });
+    }
+    async function copyAsImage(btn) { const old = btn.textContent; try { const canvas = await capture(); const blob = await new Promise(r => canvas.toBlob(r, 'image/png')); await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]); btn.textContent = '已复制'; } catch { btn.textContent = '复制失败'; } setTimeout(() => btn.textContent = old, 1600); }
+    async function downloadPNG(btn) { const old = btn.textContent; try { const canvas = await capture(); const a = document.createElement('a'); a.download = 'heyee-architecture.png'; a.href = canvas.toDataURL('image/png'); a.click(); btn.textContent = '已下载'; } catch { btn.textContent = '下载失败'; } setTimeout(() => btn.textContent = old, 1600); }
+    async function downloadPDF(btn) { const old = btn.textContent; try { const canvas = await capture(); const { jsPDF } = window.jspdf; const pdf = new jsPDF({orientation: 'landscape', unit: 'px', format: [canvas.width, canvas.height], hotfixes: ['px_scaling']}); pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width, canvas.height); pdf.save('heyee-architecture.pdf'); btn.textContent = '已下载'; } catch { btn.textContent = '下载失败'; } setTimeout(() => btn.textContent = old, 1600); }
+  </script>
+</body>
+</html>
